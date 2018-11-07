@@ -1,5 +1,5 @@
 #include <sc2api/sc2_api.h>
-
+#include "sc2api/sc2_map_info.h"
 #include <iostream>
 
 using namespace sc2;
@@ -54,6 +54,11 @@ public:
 		case UNIT_TYPEID::TERRAN_MARINE: {
 			const GameInfo& game_info = Observation()->GetGameInfo();
 			Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
+			if (scouting < game_info.enemy_start_locations.size()) { //check if we already scouted everything
+				// start scouting
+				Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
+				++scouting; //move to next target next time
+			}
 			break;
 		}
 		default: {
@@ -157,7 +162,8 @@ private:
 		return target;
 	}
 
-
+	int scouting = 0; //used for scouting all enemy bases
+	
 
 };
 
@@ -172,7 +178,8 @@ int main(int argc, char* argv[]) {
 		});
 
 	coordinator.LaunchStarcraft();
-	coordinator.StartGame(sc2::kMapBelShirVestigeLE);
+	//have to include a hard coded path to the map
+	coordinator.StartGame("CactusValleyLE.SC2Map");
 
 	while (coordinator.Update()) {
 	}

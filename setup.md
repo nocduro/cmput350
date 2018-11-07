@@ -129,3 +129,8 @@ cd ~/starcraft/MyProject/src
 clang++ -std=c++14 -I/opt/local/include -L/opt/local/lib/sc2api bot.cpp -lsc2api -lcivetweb -lprotobuf -lsc2lib -lsc2protocol -lsc2utils -lpthread -ldl -o bot
 ./bot
 ```
+
+Mac:
+```
+clang++ -std=c++14 -I/opt/local/include -L/opt/local/lib/sc2api bot.cpp -lsc2api -lcivetweb -lprotobuf -lsc2lib -lsc2protocol -lsc2utils -lpthread -ldl -framework CoreServices -o bot
+```
