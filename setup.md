@@ -35,9 +35,10 @@ Tell project where libraries and headers are:
 * Properties
 
 Configuration: All Configurations
+
 Platform: x64
 
-* Configuration Properties -> VC++ Directories
+* Configuration Properties -> General
   * Windows SDK version: (select the one you have installed)
 
 * Configuration Properties -> VC++ Directories
