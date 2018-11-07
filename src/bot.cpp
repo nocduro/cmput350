@@ -4,6 +4,22 @@
 
 using namespace sc2;
 
+struct IsVespeneGeyser {
+	bool operator()(const Unit& unit) {
+		switch (unit.unit_type.ToType()) {
+			case UNIT_TYPEID::NEUTRAL_VESPENEGEYSER: return true;
+			case UNIT_TYPEID::NEUTRAL_SPACEPLATFORMGEYSER: return true;
+			case UNIT_TYPEID::NEUTRAL_PROTOSSVESPENEGEYSER: return true;
+			default: return false;
+		}
+	}
+};
+
+
+
+
+
+
 class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
@@ -12,7 +28,6 @@ public:
 
 	virtual void OnStep() final {
 		TryBuildSupplyDepot();
-
 		TryBuildBarracks();
 	}
 
@@ -24,11 +39,18 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_SCV: {
 			const Unit* mineral_target = FindNearestMineralPatch(unit->pos);
+			const Unit* gas_target = FindNearestGasPatch(unit->pos);
 			if (!mineral_target) {
 				break;
 			}
-			Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
-			break;
+			if (gas_target){
+				Actions()->UnitCommand(unit, ABILITY_ID::BUILD_REFINERY, gas_target);
+				break;
+			}
+			else {
+				Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
+				break;
+			}
 		}
 		case UNIT_TYPEID::TERRAN_BARRACKS: {
 			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
@@ -36,7 +58,7 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_MARINE: {
 			const GameInfo& game_info = Observation()->GetGameInfo();
-			Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations.front());
+			Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
 			break;
 		}
 		default: {
@@ -89,6 +111,10 @@ private:
 		return TryBuildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT);
 	}
 
+	
+
+
+
 	const Unit* FindNearestMineralPatch(const Point2D& start) {
 		Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
 		float distance = std::numeric_limits<float>::max();
@@ -112,12 +138,32 @@ private:
 			return false;
 		}
 
-		if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 0) {
+		if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 2) {
 			return false;
 		}
 
 		return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS);
 	}
+
+
+	const Unit* FindNearestGasPatch(const Point2D& start) {
+		Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
+		float distance = std::numeric_limits<float>::max();
+		const Unit* target = nullptr;
+		for (const auto& u : units) {
+			if (u->unit_type == UNIT_TYPEID::NEUTRAL_VESPENEGEYSER) {
+				float d = DistanceSquared2D(u->pos, start);
+				if (d < distance) {
+					distance = d;
+					target = u;
+				}
+			}
+		}
+		return target;
+	}
+
+
+
 };
 
 int main(int argc, char* argv[]) {
