@@ -1,5 +1,5 @@
 #include <sc2api/sc2_api.h>
-
+#include "sc2api/sc2_map_info.h"
 #include <iostream>
 
 using namespace sc2;
@@ -177,7 +177,8 @@ int main(int argc, char* argv[]) {
 		});
 
 	coordinator.LaunchStarcraft();
-	coordinator.StartGame(sc2::kMapBelShirVestigeLE);
+	//have to include a hard coded path to the map
+	coordinator.StartGame("CactusValleyLE.SC2Map");
 
 	while (coordinator.Update()) {
 	}
