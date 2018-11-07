@@ -59,6 +59,18 @@ public:
 				Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
 				++scouting; //move to next target next time
 			}
+
+			//small early game rush attempt
+			size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
+			std::cout << marinecount << std::endl;
+			if (marinecount > 10) {
+				
+				sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+				for (size_t i = 0; i < marinecount; i++)
+				{
+					Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[0]);
+				}
+			}
 			break;
 		}
 		default: {
