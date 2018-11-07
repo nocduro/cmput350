@@ -15,11 +15,6 @@ struct IsVespeneGeyser {
 	}
 };
 
-
-
-
-
-
 class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
