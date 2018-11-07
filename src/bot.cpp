@@ -59,6 +59,11 @@ public:
 		case UNIT_TYPEID::TERRAN_MARINE: {
 			const GameInfo& game_info = Observation()->GetGameInfo();
 			Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
+			if (scouting < game_info.enemy_start_locations.size()) { //check if we already scouted everything
+				// start scouting
+				Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
+				++scouting; //move to next target next time
+			}
 			break;
 		}
 		default: {
@@ -162,7 +167,8 @@ private:
 		return target;
 	}
 
-
+	int scouting = 0; //used for scouting all enemy bases
+	
 
 };
 
