@@ -281,7 +281,9 @@ endif ()
 After all 3 files are created go to back the root directory of the project "~/Project/"
 
 > run the command "cmake ../ -G Xcode"
+
 > cd build/
+
 > open "projectname".xcodeproj
 
 After build the project and it should work
