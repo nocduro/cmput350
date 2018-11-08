@@ -1,6 +1,7 @@
 #include <sc2api/sc2_api.h>
 #include "sc2api/sc2_map_info.h"
 #include <iostream>
+#include <math.h>
 
 using namespace sc2;
 
@@ -18,7 +19,9 @@ struct IsVespeneGeyser {
 class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
+		
 		std::cout << "Hello, World!" << std::endl;
+		
 	}
 
 	virtual void OnStep() final {
@@ -32,6 +35,7 @@ public:
         const ObservationInterface* observation = Observation();
 		switch (unit->unit_type.ToType()) {
 
+// <<<<<<< HEAD
             // if command center is idle, makes scvs (should be running constantly)
     		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
     			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
@@ -76,25 +80,72 @@ public:
     				++scouting; //move to next target next time
     			}
 
-    			//small early game rush attempt
-    			size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
-    			// std::cout << marinecount << std::endl;
-    			if (marinecount > 10) {
+    		// 	//small early game rush attempt
+    		// 	size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
+    		// 	// std::cout << marinecount << std::endl;
+    		// 	if (marinecount > 10) {
     				
-    				sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
-    				for (size_t i = 0; i < marinecount; i++)
-    				{
-    					Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[0]);
-    				}
+    		// 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+    		// 		for (size_t i = 0; i < marinecount; i++)
+    		// 		{
+    		// 			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[0]);
+    		// 		}
+    		// 	}
+    		// 	break;
+    		// }
+    		// default: {
+    		// 	break;
+    		// }
+// =======
+    			//small early game rush attempt
+    			size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE); // get
+    		
+    			if (marinecount > 10 && !earlyAttacked) { //check if we have enough marines
+    				earlyAttacked = 1; //dont do it again
+
+    				earlyrush(marinecount); //ATTACC
     			}
     			break;
     		}
     		default: {
     			break;
     		}
+// >>>>>>> 5506eb6472961018c045a32edb57fe56b5e90d67
 		}
 	}
 private:
+	//attacks early game with marinecount marines to nearest enemy
+	void earlyrush(size_t marinecount) {
+		const GameInfo& game_info = Observation()->GetGameInfo();
+		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
+		sc2::Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)); //get our marine units
+		int target = FindNearestEnemy(game_info, barracks); //find closest enemy
+		for (size_t i = 0; i < marinecount; i++) //iterate through our marines
+		{
+			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[target]); //attack selected target
+		}
+	}
+	//find nearest enemy will return index of the nearest enemy base using x,y
+	int FindNearestEnemy(const GameInfo& game_info, sc2::Units barracks) {
+		int min = 0;
+		int startx = barracks[0]->pos.x; //get the position of our barracks
+		int starty = barracks[0]->pos.y;
+		float smallest = Distance(startx, starty, game_info.enemy_start_locations[0].x, game_info.enemy_start_locations[0].y);
+		
+		for (size_t i = 1; i < game_info.enemy_start_locations.size(); i++) //iterate through enemy bases
+		{
+			if (Distance(startx,starty, game_info.enemy_start_locations[i].x, game_info.enemy_start_locations[i].y) < smallest) //if next enemy is closer
+			{
+				min = i; //set min to new min
+			}
+		}
+		return min; //return index
+	}
+	//helper function to get distance between two points
+	float Distance(int x1, int y1, int x2, int y2) {
+		return sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
+	}
+
 	size_t CountUnitType(UNIT_TYPEID unit_type) {
 		return Observation()->GetUnits(Unit::Alliance::Self, IsUnit(unit_type)).size();
 	}
@@ -226,7 +277,7 @@ private:
 	}
 
 	int scouting = 0; //used for scouting all enemy bases
-	
+	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
 
 };
 

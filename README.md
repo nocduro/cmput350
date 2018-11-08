@@ -5,19 +5,20 @@ Group members
 - Ahzam Ahmad
 - Erik Ligai
 - Mackenzie Hauck
-- Thomas Chan
+- Thomas Chan - tcchan
 
 
 ## Building instructions
 Software needed:
 * Starcraft II game
 * Visual Studio (Windows)
+* Xcode Studios (MacOS)
 
 ### Windows
-Clone repo, and follow steps in `setup.md`. Most of the configuration steps can be skipped when cloning, only the VC++ include directories need to be changed (?).
+Clone repo, and follow steps in [setup.md](https://github.com/nocduro/cmput350/blob/master/setup.md). Most of the configuration steps can be skipped when cloning, only the VC++ include directories need to be changed (?).
 
 ### Mac/Linux
-No additional steps needed other than those in `setup.md`
+No additional steps needed other than those in [setup.md](https://github.com/nocduro/cmput350/blob/master/setup.md).
 
 ### Installing maps
 To run, the maps must also be copied to your systems Starcraft II installation directory under `Maps`. `CactusValleyLE.SC2Map` is included in this repo.
