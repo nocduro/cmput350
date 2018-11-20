@@ -20,7 +20,7 @@ class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
 		
-		std::cout << "Hello, World!" << std::endl;
+		std::cout << "Can I get a pogchamp in the chat?" << std::endl;
 		
 	}
 
@@ -35,7 +35,6 @@ public:
         const ObservationInterface* observation = Observation();
 		switch (unit->unit_type.ToType()) {
 
-// <<<<<<< HEAD
             // if command center is idle, makes scvs (should be running constantly)
     		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
     			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
@@ -73,56 +72,46 @@ public:
     		}
     		case UNIT_TYPEID::TERRAN_MARINE: {
     			const GameInfo& game_info = Observation()->GetGameInfo();
+				size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE); // get number of marines
+				if (marinecount==1 && !earlyAttacked) {
+					scouter = unit; 
+				}
     			Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
-    			if (scouting < game_info.enemy_start_locations.size()) { //check if we already scouted everything
+    			if (enemypos<0) { //check if we already found enemy base
     				// start scouting
-    				Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
-    				++scouting; //move to next target next time
+					if (unit == scouter && scouter->health > 0) {
+						std::cout << "scouter still alive" << std::endl;
+						Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
+						++scouting; //move to next target next time
+					}
+					else if(!scouter->is_alive){
+						enemypos = scouting-1;
+						std::cout << "enemy at pos " << enemypos << std::endl;
+					}
     			}
-
-    		// 	//small early game rush attempt
-    		// 	size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
-    		// 	// std::cout << marinecount << std::endl;
-    		// 	if (marinecount > 10) {
-    				
-    		// 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
-    		// 		for (size_t i = 0; i < marinecount; i++)
-    		// 		{
-    		// 			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[0]);
-    		// 		}
-    		// 	}
-    		// 	break;
-    		// }
-    		// default: {
-    		// 	break;
-    		// }
-// =======
     			//small early game rush attempt
-    			size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE); // get
-    		
-    			if (marinecount > 10 && !earlyAttacked) { //check if we have enough marines
+    			if (marinecount > 12 && !earlyAttacked && enemypos>=0) { //check if we have enough marines
     				earlyAttacked = 1; //dont do it again
-
-    				earlyrush(marinecount); //ATTACC
+    				earlyrush(marinecount, enemypos); //ATTACC
     			}
     			break;
     		}
     		default: {
     			break;
     		}
-// >>>>>>> 5506eb6472961018c045a32edb57fe56b5e90d67
+
 		}
 	}
 private:
 	//attacks early game with marinecount marines to nearest enemy
-	void earlyrush(size_t marinecount) {
+	void earlyrush(size_t marinecount, int enemypos) {
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
 		sc2::Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)); //get our marine units
-		int target = FindNearestEnemy(game_info, barracks); //find closest enemy
+		//int target = FindNearestEnemy(game_info, barracks); //find closest enemy
 		for (size_t i = 0; i < marinecount; i++) //iterate through our marines
 		{
-			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[target]); //attack selected target
+			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); //attack selected target
 		}
 	}
 	//find nearest enemy will return index of the nearest enemy base using x,y
@@ -211,14 +200,9 @@ private:
             return TryBuildStructure(ABILITY_ID::BUILD_REFINERY);
         }
 
-
-
         return TryBuildStructure(ABILITY_ID::BUILD_REFINERY);
     }
-
 	
-
-
     // finds the nearest mineral patch to our current base
 	const Unit* FindNearestMineralPatch(const Point2D& start) {
 		Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
@@ -278,7 +262,8 @@ private:
 
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
-
+	const Unit *scouter; //marine unit used for scouting earlygame
+	int enemypos = -1; //index for enemy position
 };
 
 int main(int argc, char* argv[]) {
