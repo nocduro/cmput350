@@ -482,4 +482,7 @@ ASALocalRun/
 # Local History for Visual Studio
 .localhistory/
 
+# Mac stuff
+.DS_Store
+
 # End of https://www.gitignore.io/api/c++,cmake,xcode,visualstudio,visualstudiocode
