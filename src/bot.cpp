@@ -29,6 +29,7 @@ public:
 	virtual void OnStep() final {
 		TryBuildSupplyDepot();
 		TryBuildBarracks();
+        //TryFarmGas();
 	}
 
 	virtual void OnUnitIdle(const Unit* unit) final {
@@ -39,23 +40,28 @@ public:
 
             // if command center is idle, makes scvs (should be running constantly)
     		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
-    			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
-				
-				
+                size_t scvCount = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
+                if (scvCount <= 16){
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
+                }
     			break;
     		}
 
             // if scv is idle, make it do something productive
     		case UNIT_TYPEID::TERRAN_SCV: {
+                size_t countSCV = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
     			const Unit* mineral_target = FindNearestMineralPatch(unit->pos);
-    			const Unit* gas_target = FindNearestGasPatch(unit->pos);
+    			const Unit* gas_target = FindNearestObject(unit->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER);
+                const Unit* refinery_target = FindNearestObject(unit->pos,UNIT_TYPEID::TERRAN_REFINERY);
     			if (!mineral_target) {
                     // TryBuildRefinery();
     				// Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target); // send idle worker to gas
                     break;
     			}
                 if (observation->GetFoodUsed() == 15) {
-                    Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target); // send idle worker to gas
+                    Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target);
+                    
+                    break;// send idle worker to gas
                 }
     			if (gas_target){
                     TryBuildRefinery(); // build refinery if a gas patch is found
@@ -64,14 +70,21 @@ public:
     				// Actions()->UnitCommand(unit, ABILITY_ID::BUILD_REFINERY, gas_target);
     				break;
 				}
+                if (refinery_target){
+                    Actions()->UnitCommand(unit, ABILITY_ID::SMART, refinery_target);
+                    break;
+                }
+                
     			else {
-        //             Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target); // send idle worker to gas
-    				Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
+                    if (countSCV <10){
+                        Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
+                    }
     				break;
     			}
     		}
     		case UNIT_TYPEID::TERRAN_BARRACKS: {
-    			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+                BuildOrder(unit);
+    			//Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
     			break;
     		}
     		case UNIT_TYPEID::TERRAN_MARINE: {
@@ -170,7 +183,7 @@ private:
 		float ry = GetRandomScalar();
 
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
-            Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestGasPatch(unit_to_build->pos));
+            Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
         } else {
 		  Actions()->UnitCommand(unit_to_build,
 			ability_type_for_structure,
@@ -290,22 +303,53 @@ private:
 		return startlocations[index];
 	}
 
-    // finds the nearest gas patch in relation to unit
-	const Unit* FindNearestGasPatch(const Point2D& start) {
-		Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
-		float distance = std::numeric_limits<float>::max();
-		const Unit* target = nullptr;
-		for (const auto& u : units) {
-			if (u->unit_type == UNIT_TYPEID::NEUTRAL_VESPENEGEYSER) {
-				float d = DistanceSquared2D(u->pos, start);
-				if (d < distance) {
-					distance = d;
-					target = u;
-				}
-			}
-		}
-		return target;
-	}
+
+        
+    const Unit* FindNearestObject(const Point2D& start,UNIT_TYPEID type) {
+        Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
+        float distance = std::numeric_limits<float>::max();
+        const Unit* target = nullptr;
+        for (const auto& u : units) {
+            if (u->unit_type == type) {
+                float d = DistanceSquared2D(u->pos, start);
+                if (d < distance) {
+                    distance = d;
+                    target = u;
+                }
+            }
+        }
+        return target;
+    }
+        
+    void BuildOrder(const Unit* unit){
+        const ObservationInterface* observation = Observation();
+        size_t mineral=observation->GetMinerals();
+        size_t vespene=observation->GetVespene();
+        size_t countMarine = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
+        size_t countreaper = CountUnitType(UNIT_TYPEID::TERRAN_REAPER);
+        size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB);
+        
+        if (countMarine > 10 && countreaper < 5){
+            Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_REAPER);
+        }
+        else if (counttech_lab >= 1){
+            Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARAUDER);
+        }
+        else if (mineral > 50 && vespene >25){
+            Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
+        }
+        else{
+            Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+        }
+            
+    }
+        
+    void TryFarmGas(){
+        
+        
+    }
+        
+ 
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
 	const Unit *scouter; //marine unit used for scouting earlygame
