@@ -7,21 +7,58 @@
 using namespace sc2;
 
 int main(int argc, char* argv[]) {
-    Coordinator coordinator;
-    coordinator.LoadSettings(argc, argv);
 
-    Bot bot;
-    coordinator.SetParticipants({
-        CreateParticipant(Race::Terran, &bot),
-        CreateComputer(Race::Protoss)
-        });
+    enum myRace {Terran, Protoss, Zerg};
 
-    coordinator.LaunchStarcraft();
-    //have to include a hard coded path to the map
-    coordinator.StartGame("CactusValleyLE.SC2Map");
+    std::cout << "Run once ('r') or simulate many ('s')?" << std::endl;
 
-    while (coordinator.Update()) {
+    char decision;
+    std::cin >> decision;
+
+    if (decision == 'r') {
+        Coordinator coordinator;
+        coordinator.LoadSettings(argc, argv);
+
+        Bot bot;
+        coordinator.SetParticipants({
+            CreateParticipant(Race::Terran, &bot),
+            CreateComputer(Race::Protoss)
+            });
+
+        coordinator.LaunchStarcraft();
+        //have to include a hard coded path to the map
+        coordinator.StartGame("CactusValleyLE.SC2Map");
+
+        while (coordinator.Update()) {
+        }
+    } else if (decision == 's') {
+        Coordinator coordinator;
+        coordinator.LoadSettings(argc, argv);
+
+        coordinator.SetStepSize(100);
+
+        for (int i = 0; i < 20; ++i){
+            Bot bot;
+            // myRace race1 = static_cast<myRace>(race);
+            coordinator.SetParticipants({
+                CreateParticipant(Race::Terran, &bot),
+                CreateComputer(Race::Protoss)
+                });
+
+            coordinator.LaunchStarcraft();
+            //have to include a hard coded path to the map
+            coordinator.StartGame("CactusValleyLE.SC2Map");
+
+            while (coordinator.Update()) {
+            }
+
+            std::cout << "GAME COMPLETE" << std::endl;
+        }
     }
+
+
+
+    
 
     return 0;
 }
