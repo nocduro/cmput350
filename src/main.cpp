@@ -32,19 +32,70 @@ int main(int argc, char* argv[]) {
         while (coordinator.Update()) {
         }
     } else if (decision == 's') {
-        Coordinator coordinator;
-        coordinator.LoadSettings(argc, argv);
-
-        coordinator.SetStepSize(100);
+        
 
         for (int i = 0; i < 20; ++i){
+            ReplayPlayerInfo replayPlayerInfo;
+            Coordinator coordinator;
+            coordinator.LoadSettings(argc, argv);
+            coordinator.SetMultithreaded(true);
+
+            coordinator.SetStepSize(10);
             Bot bot;
-            // myRace race1 = static_cast<myRace>(race);
             coordinator.SetParticipants({
                 CreateParticipant(Race::Terran, &bot),
                 CreateComputer(Race::Protoss)
                 });
+            coordinator.LaunchStarcraft();
+            //have to include a hard coded path to the map
+            coordinator.StartGame("CactusValleyLE.SC2Map");
 
+            while (coordinator.Update()) {
+            }
+            std::cout << "we won: " << replayPlayerInfo.game_result << std::endl;
+
+            std::cout << "GAME COMPLETE" << std::endl;
+
+            coordinator.LeaveGame();
+        }
+
+        for (int i = 0; i < 20; ++i){
+            ReplayPlayerInfo replayPlayerInfo;
+        Coordinator coordinator;
+        coordinator.LoadSettings(argc, argv);
+        coordinator.SetMultithreaded(true);
+
+        coordinator.SetStepSize(10);
+            Bot bot;
+            coordinator.SetParticipants({
+                CreateParticipant(Race::Terran, &bot),
+                CreateComputer(Race::Terran)
+                });
+            coordinator.LaunchStarcraft();
+            //have to include a hard coded path to the map
+            coordinator.StartGame("CactusValleyLE.SC2Map");
+
+            while (coordinator.Update()) {
+            }
+
+
+            std::cout << "GAME COMPLETE" << std::endl;
+
+            coordinator.LeaveGame();
+        }
+
+        for (int i = 0; i < 20; ++i){
+            ReplayPlayerInfo replayPlayerInfo;
+        Coordinator coordinator;
+        coordinator.LoadSettings(argc, argv);
+        coordinator.SetMultithreaded(true);
+
+        coordinator.SetStepSize(10);
+            Bot bot;
+            coordinator.SetParticipants({
+                CreateParticipant(Race::Terran, &bot),
+                CreateComputer(Race::Zerg)
+                });
             coordinator.LaunchStarcraft();
             //have to include a hard coded path to the map
             coordinator.StartGame("CactusValleyLE.SC2Map");
@@ -53,6 +104,8 @@ int main(int argc, char* argv[]) {
             }
 
             std::cout << "GAME COMPLETE" << std::endl;
+
+            coordinator.LeaveGame();
         }
     }
 
