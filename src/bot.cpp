@@ -2,6 +2,7 @@
 #include "sc2api/sc2_map_info.h"
 #include <iostream>
 #include <math.h>
+#include <algorithm>
 
 using namespace sc2;
 
@@ -24,6 +25,10 @@ public:
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		playerpos = getPlayerPos(game_info.enemy_start_locations);
 		std::cout << "We are starting at: (" <<playerpos.x << ", " << playerpos.y << ")"<< std::endl;
+		getPatrolPoints(playerpos);
+		for (Point2D pos : patrolpoints) {
+			std::cout << pos.x << " " << pos.y << std::endl;
+		}
 	}
 
 	virtual void OnStep() final {
@@ -92,6 +97,9 @@ public:
 					else if(!scouter->is_alive){
 						enemypos = scouting-1;
 						std::cout << "enemy at pos " << enemypos << std::endl;
+						if (enemypos > -1) {
+							
+						}
 					}
     			}
     			//small early game rush attempt
@@ -258,36 +266,16 @@ private:
 		startlocations.push_back(Point2D(158.5, 33.5));
 		startlocations.push_back(Point2D(158.5, 158.5));
 		//(33.5,33.5)	(33.5, 158.5)	(158.5, 33.5)	(158.5, 158.5)
-		bool selfpos[] = {true,true,true,true};
-		for (Point2D pos : enemylocations) {
-			if (pos.x == 33.5) {
-				if (pos.y == 33.5) {
-					//enemy at 33.5, 33.5
-					selfpos[0] = false; //not our position.
-				}
-				if (pos.y == 158.5) {
-					selfpos[1] = false;
-				}
+		for (Point2D pos : startlocations) {
+			if (std::find(enemylocations.begin(), enemylocations.end(), pos) != enemylocations.end()) {
+				// not our starting position
 			}
-			if (pos.x == 158.5) {
-				if (pos.y == 33.5) {
-					//enemy at 33.5, 33.5
-					selfpos[0] = false; //not our position.
-				}
-				if (pos.y == 158.5) {
-					selfpos[1] = false;
-				}
+			else {
+				//our starting position
+				return pos;
 			}
 		}
-		//one of self pos must still be true
-		//find which one and return point related to it
-		int index = 0;
-		for (bool truth : selfpos) {
-			if (!truth) {
-				++index;
-			}
-		}
-		return startlocations[index];
+		return Point2D(); //somehow we dont exist and have returned a null point2d
 	}
 
     // finds the nearest gas patch in relation to unit
@@ -306,11 +294,109 @@ private:
 		}
 		return target;
 	}
+
+	//function called once we know our enemies position, so we can patrol the correct part of our base
+	// appends Point2D objects (3) to the vector.
+	void getPatrolPoints(Point2D mypos) {
+		bool xadj = false; // will use these to determine which patrol points to send units to
+		bool yadj = false; //used to indicate if enemy adjacent in any axis
+		bool selfcorner[] = { false,false,false,false }; // need to find which corner we are in to filter out garbage patrol points
+		// ordered in terms of corners BL, TL, TR, BR
+		if (mypos.x < 100) {
+			//left side of map
+			if (mypos.y < 100) {
+				//bottom side of map
+				selfcorner[0] = true;
+			}
+			else {
+				//topside of map
+				selfcorner[1] = true;
+			}
+		}
+		else {
+			//right side of map
+			if (mypos.y > 100) {
+				//bottom side of map
+				selfcorner[2] = true;
+			}
+			else {
+				//topside of map
+				selfcorner[3] = true;
+			}
+		}
+		
+		
+		/*if (mypos.x == enemypos.x) {
+			xadj = true;
+		}
+		if (mypos.y == enemypos.y) {
+			yadj = true;
+		}*/
+		// now know enemies position relative to us in terms of adjacency
+
+		std::vector<Point2D> allpatrols; // all the possible patrol points
+
+		int dx, dy;
+		const GameInfo& game_info = Observation()->GetGameInfo();
+
+		if (mypos.x > 100) {
+			//right side of map so need to take right edge
+			dx = game_info.width - mypos.x;
+		}
+		else {
+			dx = mypos.x;
+		}
+
+		if (mypos.y > 100) {
+			//top side of map so need to take top edge
+			dy= game_info.height - mypos.y;
+		}
+		else {
+			dy = mypos.y;
+		}
+		for (int x = -1; x < 2; ++x) {
+			for (int y = -1; y < 2; ++y) {
+				Point2D temp((mypos.x + (x*dx)), (mypos.y + (y*dy)));
+				allpatrols.push_back(temp);
+			}
+		}
+		if (selfcorner[0]) {
+			//we are at bottom left so need patrol points 2,5,6,7,8
+			patrolpoints.push_back(allpatrols[8]); //order matters a bit, but not that much, put in order of importance/impact
+			patrolpoints.push_back(allpatrols[7]);
+			patrolpoints.push_back(allpatrols[5]);
+			patrolpoints.push_back(allpatrols[6]);
+			patrolpoints.push_back(allpatrols[2]);
+		}else if (selfcorner[1]) {
+			//we are at top left so need patrol points 0,3,6,7,8
+			patrolpoints.push_back(allpatrols[6]);
+			patrolpoints.push_back(allpatrols[3]);
+			patrolpoints.push_back(allpatrols[7]);
+			patrolpoints.push_back(allpatrols[8]);
+			patrolpoints.push_back(allpatrols[0]);
+		}else if(selfcorner[2]) {
+			//we are at top right so need patrol points 0,3,6,1,2
+			patrolpoints.push_back(allpatrols[0]);
+			patrolpoints.push_back(allpatrols[3]);
+			patrolpoints.push_back(allpatrols[1]);
+			patrolpoints.push_back(allpatrols[6]);
+			patrolpoints.push_back(allpatrols[2]);
+		}else {
+			//we are at bottom right so need patrol points 0,1,2,5,8
+			patrolpoints.push_back(allpatrols[2]);
+			patrolpoints.push_back(allpatrols[5]);
+			patrolpoints.push_back(allpatrols[1]);
+			patrolpoints.push_back(allpatrols[0]);
+			patrolpoints.push_back(allpatrols[8]);
+		}
+		return;
+	}
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
 	const Unit *scouter; //marine unit used for scouting earlygame
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
+	std::vector<Point2D> patrolpoints;
 };
 
 int main(int argc, char* argv[]) {
