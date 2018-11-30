@@ -3,6 +3,8 @@
 #include <iostream>
 #include <math.h>
 #include <algorithm>
+#include <ctime>
+
 
 using namespace sc2;
 
@@ -20,20 +22,25 @@ struct IsVespeneGeyser {
 class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
-		
 		std::cout << "Can I get a pogchamp in the chat?" << std::endl;
-		const GameInfo& game_info = Observation()->GetGameInfo();
-		playerpos = getPlayerPos(game_info.enemy_start_locations);
-		std::cout << "We are starting at: (" <<playerpos.x << ", " << playerpos.y << ")"<< std::endl;
-		getPatrolPoints(playerpos);
-		for (Point2D pos : patrolpoints) {
-			std::cout << pos.x << " " << pos.y << std::endl;
-		}
 	}
 
 	virtual void OnStep() final {
 		TryBuildSupplyDepot();
 		TryBuildBarracks();
+		const GameInfo& game_info = Observation()->GetGameInfo();
+		if (enemypos > -1) {//know where the enemy is
+			playerpos = getPlayerPos(game_info.enemy_start_locations);
+			getPatrolPoints(playerpos, game_info.enemy_start_locations[enemypos]);
+		}
+		double duration=0;
+		if (earlyAttacked) {
+			duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		}
+		if (duration > 40) {
+			allowPatrol = true;
+		}
+		
 	}
 
 	virtual void OnUnitIdle(const Unit* unit) final {
@@ -45,8 +52,6 @@ public:
             // if command center is idle, makes scvs (should be running constantly)
     		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
     			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
-				
-				
     			break;
     		}
 
@@ -80,13 +85,14 @@ public:
     			break;
     		}
     		case UNIT_TYPEID::TERRAN_MARINE: {
+				Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
 				const GameInfo& game_info = Observation()->GetGameInfo();
 				size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE); // get number of marines
 				
 				if (marinecount==1 && !earlyAttacked) {
 					scouter = unit; 
 				}
-    			Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
+    			
     			if (enemypos<0) { //check if we already found enemy base
     				// start scouting
 					if (unit == scouter && scouter->health > 0) {
@@ -102,12 +108,16 @@ public:
 						}
 					}
     			}
+				if (earlyAttacked && allowPatrol) {
+					Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, patrolpoints[patrolpos]); //go to patrol point
+					patrolpos++;
+					patrolpos = patrolpos % 3;
+				}
     			//small early game rush attempt
-    			if (marinecount > 12 && !earlyAttacked && enemypos>=0) { //check if we have enough marines
-    				earlyAttacked = 1; //dont do it again
-    				earlyrush(marinecount, enemypos); //ATTACC
-    			}
-
+				if (marinecount > 12 && !earlyAttacked && enemypos >= 0) { //check if we have enough marines
+					earlyAttacked = 1; //dont do it again
+					earlyrush(marinecount); //ATTACC
+				}
     			break;
     		}
     		default: {
@@ -118,13 +128,11 @@ public:
 	}
 private:
 	//attacks early game with marinecount marines to nearest enemy
-	void earlyrush(size_t marinecount, int enemypos) {
+	void earlyrush(size_t marinecount) {
+		start = std::clock();
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
-		sc2::Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)); //get our marine units
-		//int target = FindNearestEnemy(game_info, barracks); //find closest enemy
-		
-		
+			
 		for (size_t i = 0; i < marinecount; i++) //iterate through our marines
 		{
 			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); //attack selected target
@@ -296,8 +304,8 @@ private:
 	}
 
 	//function called once we know our enemies position, so we can patrol the correct part of our base
-	// appends Point2D objects (3) to the vector.
-	void getPatrolPoints(Point2D mypos) {
+	// appends Point2D objects (3) to the vector patrolpoints.
+	void getPatrolPoints(Point2D mypos, Point2D enemypos) {
 		bool xadj = false; // will use these to determine which patrol points to send units to
 		bool yadj = false; //used to indicate if enemy adjacent in any axis
 		bool selfcorner[] = { false,false,false,false }; // need to find which corner we are in to filter out garbage patrol points
@@ -326,12 +334,12 @@ private:
 		}
 		
 		
-		/*if (mypos.x == enemypos.x) {
+		if (mypos.x == enemypos.x) {
 			xadj = true;
 		}
 		if (mypos.y == enemypos.y) {
 			yadj = true;
-		}*/
+		}
 		// now know enemies position relative to us in terms of adjacency
 
 		std::vector<Point2D> allpatrols; // all the possible patrol points
@@ -360,43 +368,87 @@ private:
 				allpatrols.push_back(temp);
 			}
 		}
+
+
+		/*
+		2 5 8
+		1 4 7
+		0 3 6
+		*/
 		if (selfcorner[0]) {
 			//we are at bottom left so need patrol points 2,5,6,7,8
 			patrolpoints.push_back(allpatrols[8]); //order matters a bit, but not that much, put in order of importance/impact
-			patrolpoints.push_back(allpatrols[7]);
-			patrolpoints.push_back(allpatrols[5]);
-			patrolpoints.push_back(allpatrols[6]);
-			patrolpoints.push_back(allpatrols[2]);
+			if (xadj) {
+				patrolpoints.push_back(allpatrols[5]);
+				patrolpoints.push_back(allpatrols[2]);
+			}
+			else if (yadj) {
+				patrolpoints.push_back(allpatrols[7]);
+				patrolpoints.push_back(allpatrols[6]);
+			}
+			else {
+				patrolpoints.push_back(allpatrols[5]);
+				patrolpoints.push_back(allpatrols[7]);
+			}
 		}else if (selfcorner[1]) {
 			//we are at top left so need patrol points 0,3,6,7,8
-			patrolpoints.push_back(allpatrols[6]);
-			patrolpoints.push_back(allpatrols[3]);
-			patrolpoints.push_back(allpatrols[7]);
-			patrolpoints.push_back(allpatrols[8]);
-			patrolpoints.push_back(allpatrols[0]);
+			patrolpoints.push_back(allpatrols[6]); 
+			if (xadj) {
+				patrolpoints.push_back(allpatrols[3]);
+				patrolpoints.push_back(allpatrols[0]);
+			}
+			else if (yadj) {
+				patrolpoints.push_back(allpatrols[7]);
+				patrolpoints.push_back(allpatrols[8]);
+			}
+			else {
+				patrolpoints.push_back(allpatrols[3]);
+				patrolpoints.push_back(allpatrols[7]);
+			}
 		}else if(selfcorner[2]) {
 			//we are at top right so need patrol points 0,3,6,1,2
 			patrolpoints.push_back(allpatrols[0]);
-			patrolpoints.push_back(allpatrols[3]);
-			patrolpoints.push_back(allpatrols[1]);
-			patrolpoints.push_back(allpatrols[6]);
-			patrolpoints.push_back(allpatrols[2]);
+			if (xadj) {
+				patrolpoints.push_back(allpatrols[3]);
+				patrolpoints.push_back(allpatrols[6]);
+			}
+			else if (yadj) {
+				patrolpoints.push_back(allpatrols[2]);
+				patrolpoints.push_back(allpatrols[1]);
+			}
+			else {
+				patrolpoints.push_back(allpatrols[3]);
+				patrolpoints.push_back(allpatrols[1]);
+			}
+	
 		}else {
 			//we are at bottom right so need patrol points 0,1,2,5,8
 			patrolpoints.push_back(allpatrols[2]);
-			patrolpoints.push_back(allpatrols[5]);
-			patrolpoints.push_back(allpatrols[1]);
-			patrolpoints.push_back(allpatrols[0]);
-			patrolpoints.push_back(allpatrols[8]);
+			if (xadj) {
+				patrolpoints.push_back(allpatrols[5]);
+				patrolpoints.push_back(allpatrols[8]);
+			}
+			else if (yadj) {
+				patrolpoints.push_back(allpatrols[1]);
+				patrolpoints.push_back(allpatrols[0]);
+			}
+			else {
+				patrolpoints.push_back(allpatrols[5]);
+				patrolpoints.push_back(allpatrols[8]);
+			}
 		}
 		return;
 	}
+
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
 	const Unit *scouter; //marine unit used for scouting earlygame
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
+	int patrolpos = 0;
 	std::vector<Point2D> patrolpoints;
+	std::clock_t start; 
+	bool allowPatrol = false;
 };
 
 int main(int argc, char* argv[]) {
