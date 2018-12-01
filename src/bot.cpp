@@ -44,17 +44,14 @@ public:
 	}
 
 	virtual void OnUnitIdle(const Unit* unit) final {
-
         const ObservationInterface* observation = Observation();
-		
 		switch (unit->unit_type.ToType()) {
-
             // if command center is idle, makes scvs (should be running constantly)
     		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
     			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
     			break;
     		}
-
+			
             // if scv is idle, make it do something productive
     		case UNIT_TYPEID::TERRAN_SCV: {
     			const Unit* mineral_target = FindNearestMineralPatch(unit->pos);
@@ -69,16 +66,12 @@ public:
                 }
     			if (gas_target){
                     TryBuildRefinery(); // build refinery if a gas patch is found
-                    
                     // Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
     				// Actions()->UnitCommand(unit, ABILITY_ID::BUILD_REFINERY, gas_target);
-    				break;
 				}
-    			else {
-        //             Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target); // send idle worker to gas
-    				Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
-    				break;
-    			}
+    			Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
+    			break;
+    			
     		}
     		case UNIT_TYPEID::TERRAN_BARRACKS: {
     			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
