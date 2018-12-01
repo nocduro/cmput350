@@ -1,4 +1,6 @@
 src/bot
+# visual studio property sheet saying where boost and sc2api are
+SC2.props
 
 # Created by https://www.gitignore.io/api/c++,cmake,xcode,visualstudio,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=c++,cmake,xcode,visualstudio,visualstudiocode
