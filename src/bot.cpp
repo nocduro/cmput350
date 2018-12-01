@@ -58,6 +58,15 @@ public:
 
 		}
 	}
+
+	virtual void OnUnitCreated(const Unit* unit) final {}
+	virtual void OnUpgradeComplete(UpgradeID) {}
+	virtual void OnBuildingConstructionComplete(const Unit* unit) {}
+	virtual void OnNydusDetected() {}
+	virtual void OnNuclearLaunchDetected() {}
+	virtual void OnUnitEnterVision(const Unit* unit) {}
+	virtual void OnGameEnd() {}
+	virtual void OnError(const std::vector<ClientError>& client_errs, const std::vector<std::string>& protocol_errs = {}) {}
 private:
 	StateMachine sm;
 };

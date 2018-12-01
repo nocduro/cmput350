@@ -24,6 +24,7 @@ struct GameStart;
 struct GameStart_Refinery;
 struct GameStart_SupplyDepot;
 struct GameStart_BuildArmy;
+struct GameStart_BuildBarracks;
 struct EarlyRushState;
 
 
@@ -62,23 +63,21 @@ struct event1 : sc::event<event1> {};
 // It is the event usually called to progress the state machine
 // and every state should implemenet a handler for it
 struct StepEvent : sc::event<StepEvent> {};
-
-// Events for when a unit is idle
-struct UnitIdle : sc::event<UnitIdle> {
+struct CommandCenterIdle : sc::event<CommandCenterIdle> {
+	CommandCenterIdle(const Unit* u) : unit(u) {};
 	const Unit* unit;
-	UnitIdle(const Unit* u) : unit(u) {};
 };
-struct CommandCenterIdle : UnitIdle {
-	CommandCenterIdle(const Unit* u) : UnitIdle(u) {};
+struct SCVIdle : sc::event<SCVIdle> {
+	SCVIdle(const Unit* u) : unit(u) {};
+	const Unit* unit;
 };
-struct SCVIdle : UnitIdle {
-	SCVIdle(const Unit* u) : UnitIdle(u) {};
+struct BarracksIdle : sc::event<BarracksIdle> {
+	BarracksIdle(const Unit* u) : unit(u) {}
+	const Unit* unit; 
 };
-struct BarracksIdle : UnitIdle {
-	BarracksIdle(const Unit* u) : UnitIdle(u) {};
-};
-struct MarineIdle : UnitIdle {
-	MarineIdle(const Unit* u) : UnitIdle(u) {};
+struct MarineIdle : sc::event<MarineIdle> { 
+	MarineIdle(const Unit* u) : unit(u) {}
+	const Unit* unit; 
 };
 
 
@@ -116,11 +115,12 @@ struct EarlyRushState : sc::simple_state<EarlyRushState, MainState> {
 // this state is responsible for gathering resources early in the game
 // and building the starting buildings. It has several substates and starts 
 // in the state of trying to build a refinery (?)
-struct GameStart : sc::simple_state<GameStart, MainState, GameStart_Refinery> {
+struct GameStart : sc::simple_state<GameStart, MainState, GameStart_BuildBarracks> {
 	GameStart() {
 		std::cout << "GameStart state" << std::endl;
 	}
 };
+
 
 struct GameStart_Refinery : sc::simple_state<GameStart_Refinery, GameStart> {
 	GameStart_Refinery() {
@@ -138,6 +138,13 @@ struct GameStart_BuildArmy : sc::simple_state<GameStart_BuildArmy, GameStart> {
 	sc::result react(const StepEvent& event);
 };
 
+struct GameStart_BuildBarracks : sc::simple_state<GameStart_BuildBarracks, GameStart> {
+	GameStart_BuildBarracks() {
+		std::cout << "GameStart_BuildBarracks state" << std::endl;
+	}
+	typedef sc::custom_reaction<StepEvent> reactions;
+	sc::result react(const StepEvent& event);
+};
 
 
 

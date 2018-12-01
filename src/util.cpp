@@ -67,18 +67,31 @@ bool TryBuildSupplyDepot(action_t Actions, observation_t Observation) {
 	if (Observation()->GetFoodUsed() <= Observation()->GetFoodCap() - 2)
 		return false;
 
-	// std::cout << observation->GetFoodUsed() << " " << observation->GetFoodCap() << std::endl;
-
 	// Try and build a depot. Find a random SCV and give it the order.
 	return TryBuildStructure(Actions, Observation, ABILITY_ID::BUILD_SUPPLYDEPOT);
 }
 
-// attempts to build a refinery on gas patch
-bool TryBuildRefinery(action_t Actions, observation_t Observation) {
-	if (Observation()->GetFoodUsed() == 14 || Observation()->GetFoodUsed() == 16) {
-		// std::cout << "BUILD REFINERY" << std::endl;
-		return TryBuildStructure(Actions, Observation, ABILITY_ID::BUILD_REFINERY);
+size_t CountUnitType(observation_t Observation, UNIT_TYPEID unit_type) {
+	return Observation()->GetUnits(Unit::Alliance::Self, IsUnit(unit_type)).size();
+}
+
+bool TryBuildBarracks(action_t Actions, observation_t Observation) {
+	// can't build barracks without at least one supply depot
+	if (CountUnitType(Observation, UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+		std::cout << "trying to build supply depot before barracks" << std::endl;
+		TryBuildSupplyDepot(Actions, Observation);
+		return false;
 	}
 
+	// build first barracks only when supply is at 16
+	if (Observation()->GetFoodUsed() < 16) {
+		return false;
+	}
+
+	return TryBuildStructure(Actions, Observation, ABILITY_ID::BUILD_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
+}
+
+// attempts to build a refinery on gas patch
+bool TryBuildRefinery(action_t Actions, observation_t Observation) {
 	return TryBuildStructure(Actions, Observation, ABILITY_ID::BUILD_REFINERY);
 }

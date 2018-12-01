@@ -1,3 +1,4 @@
+#include <sc2api/sc2_api.h>
 #include "state.h"
 #include "util.h"
 
@@ -9,6 +10,23 @@ sc::result GameStart_Refinery::react(const StepEvent& event) {
 	if (TryBuildRefinery(actions, observation)) {
 		return transit<GameStart_BuildArmy>();
 	}
+	return discard_event();
+}
+
+sc::result GameStart_BuildBarracks::react(const StepEvent& event) {
+	auto actions = context<StateMachine>().Actions;
+	auto observation = context<StateMachine>().Observation;
+
+	if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SUPPLYDEPOT)).size() < 1) {
+		TryBuildSupplyDepot(actions, observation);
+		return discard_event();
+	}
+
+	if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)).size() > 0) {
+		return transit<GameStart_BuildArmy>();
+	}
+
+	TryBuildBarracks(actions, observation);
 	return discard_event();
 }
 
