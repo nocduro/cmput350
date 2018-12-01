@@ -62,16 +62,24 @@ struct event1 : sc::event<event1> {};
 // It is the event usually called to progress the state machine
 // and every state should implemenet a handler for it
 struct StepEvent : sc::event<StepEvent> {};
-struct CommandCenterIdle : sc::event<CommandCenterIdle> {
-	CommandCenterIdle(const Unit* u) : unit(u) {};
+
+// Events for when a unit is idle
+struct UnitIdle : sc::event<UnitIdle> {
 	const Unit* unit;
+	UnitIdle(const Unit* u) : unit(u) {};
 };
-struct SCVIdle : sc::event<SCVIdle> {
-	SCVIdle(const Unit* u) : unit(u) {};
-	const Unit* unit;
+struct CommandCenterIdle : UnitIdle {
+	CommandCenterIdle(const Unit* u) : UnitIdle(u) {};
 };
-struct BarracksIdle : sc::event<BarracksIdle> { const Unit* unit; };
-struct MarineIdle : sc::event<MarineIdle> { const Unit* unit; };
+struct SCVIdle : UnitIdle {
+	SCVIdle(const Unit* u) : UnitIdle(u) {};
+};
+struct BarracksIdle : UnitIdle {
+	BarracksIdle(const Unit* u) : UnitIdle(u) {};
+};
+struct MarineIdle : UnitIdle {
+	MarineIdle(const Unit* u) : UnitIdle(u) {};
+};
 
 
 

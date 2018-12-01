@@ -45,11 +45,11 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_BARRACKS: {
-			sm.process_event(BarracksIdle());
+			sm.process_event(BarracksIdle(unit));
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_MARINE: {
-			sm.process_event(MarineIdle());
+			sm.process_event(MarineIdle(unit));
 			break;
 		}
 		default: {
