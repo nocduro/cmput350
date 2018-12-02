@@ -20,7 +20,11 @@ sc::result MainState::react(const CommandCenterIdle& e) {
 }
 
 sc::result MainState::react(const BarracksIdle& event) {
-	// TODO: make sure we have enough supply depots to actually build a marine
+    auto Observation = context<StateMachine>().Observation;
+    auto actions = context<StateMachine>().Actions;
+    if (Observation()->GetFoodUsed() >= Observation()->GetFoodCap()) {
+        TryBuildSupplyDepot(actions, Observation);
+    }
 	context<StateMachine>().Actions()->UnitCommand(event.unit, ABILITY_ID::TRAIN_MARINE);
 	return discard_event();
 }

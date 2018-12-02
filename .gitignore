@@ -1,3 +1,7 @@
+
+#for macs
+.DS_Store
+
 src/bot
 # visual studio property sheet saying where boost and sc2api are
 SC2.props

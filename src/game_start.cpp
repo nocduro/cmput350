@@ -22,7 +22,7 @@ sc::result GameStart_BuildBarracks::react(const StepEvent& event) {
 		return discard_event();
 	}
 
-	if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)).size() > 0) {
+	if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)).size() > 2) {
 		return transit<GameStart_BuildArmy>();
 	}
 
