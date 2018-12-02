@@ -1,11 +1,12 @@
 #include <sc2api/sc2_api.h>
 #include <iostream>
 #include "bot.h"
+#include <vector>
 using namespace sc2;
 
 
 // finds the nearest gas patch in relation to unit
-const Unit* FindNearestGasPatch(observation_t Observation, const Point2D& start) {
+const Unit* FindNearestObject(observation_t Observation, const Point2D& start) {
 	Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
 	float distance = std::numeric_limits<float>::max();
 	const Unit* target = nullptr;
@@ -42,7 +43,7 @@ bool TryBuildStructure(action_t Actions, observation_t Observation, ABILITY_ID a
 	float ry = GetRandomScalar();
 
 	if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
-		Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestGasPatch(Observation, unit_to_build->pos));
+		Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(Observation, unit_to_build->pos));
 		std::cout << "build refinery" << std::endl;
 	}
 	else {
@@ -57,7 +58,8 @@ bool TryBuildStructure(action_t Actions, observation_t Observation, ABILITY_ID a
 
 // attempts to build supply depot
 bool TryBuildSupplyDepot(action_t Actions, observation_t Observation) {
-
+    Units units = Observation()->GetUnits(Unit::Alliance::Self);
+    
 	if (Observation()->GetFoodUsed() == 14) {
 		// std::cout << "BUILD SUPPLY DEPOT" << std::endl;
 		return TryBuildStructure(Actions, Observation, ABILITY_ID::BUILD_SUPPLYDEPOT);
@@ -66,7 +68,7 @@ bool TryBuildSupplyDepot(action_t Actions, observation_t Observation) {
 	// If we are not supply capped, don't build a supply depot.
 	if (Observation()->GetFoodUsed() <= Observation()->GetFoodCap() - 2)
 		return false;
-
+    
 	// Try and build a depot. Find a random SCV and give it the order.
 	return TryBuildStructure(Actions, Observation, ABILITY_ID::BUILD_SUPPLYDEPOT);
 }
@@ -94,4 +96,28 @@ bool TryBuildBarracks(action_t Actions, observation_t Observation) {
 // attempts to build a refinery on gas patch
 bool TryBuildRefinery(action_t Actions, observation_t Observation) {
 	return TryBuildStructure(Actions, Observation, ABILITY_ID::BUILD_REFINERY);
+}
+
+bool FarmGas(action_t Actions, observation_t Observation){
+    const ObservationInterface* observation = Observation();
+    Units Refinerys = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
+    Units Workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
+    Units units = Observation()->GetUnits(Unit::Alliance::Self);
+    for (const auto& refinery:Refinerys){
+        for (const auto& worker:Workers){
+            if (refinery->assigned_harvesters < refinery->ideal_harvesters){
+                Actions()->UnitCommand(worker, ABILITY_ID::HARVEST_GATHER, refinery);
+                
+        
+                /*if (worker->orders.empty()){
+                    Actions()->UnitCommand(worker, ABILITY_ID::HARVEST_GATHER, refinery);
+                }*/
+                
+            }
+            
+        }
+    }
+     
+    
+    return true;
 }

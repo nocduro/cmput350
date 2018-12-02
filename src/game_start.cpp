@@ -7,9 +7,22 @@
 sc::result GameStart_Refinery::react(const StepEvent& event) {
 	auto actions = context<StateMachine>().Actions;
 	auto observation = context<StateMachine>().Observation;
-	if (TryBuildRefinery(actions, observation)) {
-		return transit<GameStart_BuildArmy>();
-	}
+        
+    if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY)).size() >= 1){
+        if (FarmGas(actions,observation)){
+            std::cout << "here" << std::endl;
+            return transit<GameStart_BuildArmy>();
+
+        }
+    }
+    
+    
+    /*
+    if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY)).size() > 1){
+       return transit<GameStart_BuildArmy>();
+    }*/
+    
+    TryBuildRefinery(actions, observation);
 	return discard_event();
 }
 
@@ -21,9 +34,10 @@ sc::result GameStart_BuildBarracks::react(const StepEvent& event) {
 		TryBuildSupplyDepot(actions, observation);
 		return discard_event();
 	}
+    
 
-	if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)).size() > 2) {
-		return transit<GameStart_BuildArmy>();
+	if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)).size() > 1) {
+		return transit<GameStart_Refinery>();
 	}
 
 	TryBuildBarracks(actions, observation);
