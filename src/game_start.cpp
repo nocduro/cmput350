@@ -7,22 +7,26 @@
 sc::result GameStart_Refinery::react(const StepEvent& event) {
 	auto actions = context<StateMachine>().Actions;
 	auto observation = context<StateMachine>().Observation;
+    Units Refinerys = observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
         
     if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY)).size() >= 1){
-        if (FarmGas(actions,observation)){
-            std::cout << "here" << std::endl;
-            return transit<GameStart_BuildArmy>();
-
+        if(FarmGas(actions,observation)){
+            std::cout <<"done farming gas" << std::endl;
         }
     }
     
     
-    /*
-    if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY)).size() > 1){
-       return transit<GameStart_BuildArmy>();
-    }*/
     
-    TryBuildRefinery(actions, observation);
+    if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY)).size() > 1){
+        for (const auto& refinery: Refinerys){
+            if (refinery->assigned_harvesters == refinery->ideal_harvesters){
+                return transit<GameStart_BuildArmy>();
+            }
+        }
+    }
+    if (observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY)).size() < 1){
+        TryBuildRefinery(actions, observation);
+    }
 	return discard_event();
 }
 

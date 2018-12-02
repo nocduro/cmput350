@@ -104,20 +104,22 @@ bool FarmGas(action_t Actions, observation_t Observation){
     Units Workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
     Units units = Observation()->GetUnits(Unit::Alliance::Self);
     for (const auto& refinery:Refinerys){
-        for (const auto& worker:Workers){
+        //for (const auto& worker: Workers){
+        size_t workers_needed = refinery->ideal_harvesters - refinery->assigned_harvesters;
+        for (size_t i =0 ; i < workers_needed - 1; i++){
             if (refinery->assigned_harvesters < refinery->ideal_harvesters){
-                Actions()->UnitCommand(worker, ABILITY_ID::HARVEST_GATHER, refinery);
+                //Actions()->UnitCommand(worker, ABILITY_ID::HARVEST_GATHER, refinery);
+                Actions()->UnitCommand(Workers[i], ABILITY_ID::HARVEST_GATHER, refinery);
+                std::cout<< "here test" << std::endl;
                 
-        
-                /*if (worker->orders.empty()){
-                    Actions()->UnitCommand(worker, ABILITY_ID::HARVEST_GATHER, refinery);
-                }*/
                 
             }
-            
+            else if (refinery->assigned_harvesters == refinery->ideal_harvesters){
+                return true;
+            }
         }
     }
      
     
-    return true;
+    return false;
 }
