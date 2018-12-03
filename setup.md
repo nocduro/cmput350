@@ -1,4 +1,26 @@
 
+## Setup on windows with repo
+* clone repo
+* download boost: https://www.boost.org/users/download/
+* extract boost to convenient location
+* download SC2api pre-compiled and extract: https://github.com/Blizzard/s2client-api#precompiled-libs
+* create file `SC2.props` in the top level directory of the cloned repo
+* modify example file below, or use visual studio GUI to generate the file. This file contains the paths to the downloaded libraries if they are not already globally available
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <IncludePath>C:\boost_1_67_0;C:\Users\mhauc\starcraft\SC2API_Binary_vs2017\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\mhauc\starcraft\SC2API_Binary_vs2017\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup />
+  <ItemGroup />
+</Project>
+```
+* `start sc2bot.sln`
+* build
 
 ## Starting from scratch (without repo)
 ### Create directory structure
