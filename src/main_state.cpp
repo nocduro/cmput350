@@ -5,11 +5,6 @@
 // might be useful for scouting:
 // https://www.boost.org/doc/libs/1_50_0/libs/statechart/doc/tutorial.html#PostingEvents
 
-sc::result MainState::react(const event1& event) {
-	std::cout << "event1! player id: " << context<StateMachine>().Observation()->GetPlayerID() << std::endl;
-	return discard_event();
-}
-
 sc::result MainState::react(const CommandCenterIdle& e) {
 	// only build more SCVs when we have fewer than 16 of them
 	auto Observation = context<StateMachine>().Observation;

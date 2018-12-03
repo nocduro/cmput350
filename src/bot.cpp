@@ -27,7 +27,6 @@ public:
 		auto observation = std::bind(&Bot::Observation, this);
 		sm = StateMachine(observation, actions);
 		sm.initiate();
-		sm.process_event(event1());
 	}
 
 	virtual void OnStep() final {

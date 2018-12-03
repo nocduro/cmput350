@@ -56,8 +56,6 @@ public:
 EVENTS
 */
 
-// testing event...
-struct event1 : sc::event<event1> {};
 
 // StepEvent is sent on every step of the simulation.
 // It is the event usually called to progress the state machine
@@ -90,7 +88,6 @@ struct MainState : sc::simple_state<MainState, StateMachine, GameStart> {
 	MainState();
 	// list of the type of events we can process in MainState
 	typedef mpl::list<
-		sc::custom_reaction<event1>,
 		sc::custom_reaction<CommandCenterIdle>,
 		sc::custom_reaction<BarracksIdle>,
 		sc::custom_reaction<SCVIdle>,
@@ -98,7 +95,6 @@ struct MainState : sc::simple_state<MainState, StateMachine, GameStart> {
 	> reactions;
 
 	// corresponding reaction functions for each kind of event
-	sc::result react(const event1& event);
 	sc::result react(const CommandCenterIdle& e);
 	sc::result react(const BarracksIdle& event);
 	sc::result react(const SCVIdle& event);
