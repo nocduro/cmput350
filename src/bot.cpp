@@ -153,7 +153,7 @@ public:
     			break;
     		}
             case UNIT_TYPEID::TERRAN_STARPORT: {
-                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MEDIVAC);
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_VIKINGFIGHTER);
                 break;
             }
             case UNIT_TYPEID::TERRAN_FACTORY:{
@@ -258,7 +258,7 @@ private:
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
         sc2::Units tanks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SIEGETANK));
-        sc2::Units medivac = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MEDIVAC));
+        sc2::Units viking = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_VIKINGFIGHTER));
         if (tanks.size() >= 3 && enemypos >= 0){
             std::cout << "early rush" << std::endl;
             for (size_t i = 0; i < marines.size(); i++){ //iterate through our marines
@@ -267,8 +267,8 @@ private:
             for (size_t j  = 0; j < tanks.size(); j++){
                 Actions()->UnitCommand(tanks[j], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
             }
-            for (size_t k  = 0; k < medivac.size(); k++){
-                Actions()->UnitCommand(medivac[k], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+            for (size_t k  = 0; k < viking.size(); k++){
+                Actions()->UnitCommand(viking[k], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
             }
         }
 	}
@@ -307,6 +307,8 @@ private:
 		// Also get an scv to build the structure.
 		const Unit* unit_to_build = nullptr;
 		Units units = observation->GetUnits(Unit::Alliance::Self); // all units
+        Units commandcenter = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_COMMANDCENTER));
+        Units orbitalcommand = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_ORBITALCOMMAND));
 		for (const auto& unit : units) {
 			for (const auto& order : unit->orders) {
 				if (order.ability_id == ability_type_for_structure) {
@@ -350,11 +352,26 @@ private:
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+            /*
+            if (commandcenter.size() >0){
+                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(commandcenter.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+            }
+            else if (orbitalcommand.size() >0){
+                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(orbitalcommand.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+            }*/
         } else {
-		  	Actions()->UnitCommand(unit_to_build,
-			ability_type_for_structure,
-			Point2D(unit_to_build->pos.x + (rx * depth)+dx, unit_to_build->pos.y + (ry * depth)+dy));
-			depth += 0.01f;
+            if (commandcenter.size() >0){
+                Actions()->UnitCommand(unit_to_build,
+                                       ability_type_for_structure,
+                                       Point2D(commandcenter.front()->pos.x + (rx * depth)+dx, commandcenter.front()->pos.y + (ry * depth)+dy));
+                depth += 0.01f;
+            }
+            else if (orbitalcommand.size() >0){
+                Actions()->UnitCommand(unit_to_build,
+                                       ability_type_for_structure,
+                                       Point2D(orbitalcommand.front()->pos.x + (rx * depth)+dx, orbitalcommand.front()->pos.y + (ry * depth)+dy));
+                depth += 0.01f;
+            }
         }
 
 		return true;
