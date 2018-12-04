@@ -303,22 +303,22 @@ private:
 		if (playerpos.x < 100) {
 			//left side, so want positive rx
 			rx = GetRandomFraction();
-			dx = 2.0f;
+			dx = 3.0f;
 		}
 		else {
 			rx = -1 * GetRandomFraction();
-			dx = -2.0f;
+			dx = -3.0f;
 
 		}
 
 		if (playerpos.y< 100) {
 			//bottom, so want positive rx
 			ry = GetRandomFraction();
-			dy = 2.0f;
+			dy = 3.0f;
 		}
 		else {
 			ry = -1 * GetRandomFraction();
-			dy = -2.0f;
+			dy = -3.0f;
 		}
 		float depth = 1.0f;
 		// if the structure type we want to build is a refinery, find nearest geyser and build
