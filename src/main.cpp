@@ -19,6 +19,8 @@ int main(int argc, char* argv[]) {
         Coordinator coordinator;
         coordinator.LoadSettings(argc, argv);
 
+        coordinator.SetStepSize(50);
+
         Bot bot;
         coordinator.SetParticipants({
             CreateParticipant(Race::Terran, &bot),
@@ -38,9 +40,9 @@ int main(int argc, char* argv[]) {
             ReplayPlayerInfo replayPlayerInfo;
             Coordinator coordinator;
             coordinator.LoadSettings(argc, argv);
-            coordinator.SetMultithreaded(true);
+            // coordinator.SetMultithreaded(true);
 
-            coordinator.SetStepSize(10);
+            coordinator.SetStepSize(5);
             Bot bot;
             coordinator.SetParticipants({
                 CreateParticipant(Race::Terran, &bot),

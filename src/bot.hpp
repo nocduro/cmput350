@@ -17,7 +17,7 @@ public:
     virtual void OnUnitIdle(const Unit* unit) final;
 
 private:
-    void earlyrush(size_t marinecount, int enemypos);
+    void earlyrush(size_t marinecount);
 
     int FindNearestEnemy(const GameInfo& game_info, sc2::Units barracks);
 
@@ -35,11 +35,20 @@ private:
 
     bool TryBuildBarracks();
 
+    sc2::Point2D getPlayerPos(std::vector<sc2::Point2D> enemylocations);
+
     // finds the nearest gas patch in relation to unit
     const Unit* FindNearestGasPatch(const Point2D& start);
+
+    void getPatrolPoints(Point2D mypos, Point2D enemypos);
 
     int scouting = 0; //used for scouting all enemy bases
     bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
     const Unit *scouter; //marine unit used for scouting earlygame
     int enemypos = -1; //index for enemy position
+    sc2::Point2D playerpos;
+    int patrolpos = 0;
+    std::vector<Point2D> patrolpoints;
+    std::clock_t start; 
+    bool allowPatrol = false;
 };
