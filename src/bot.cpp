@@ -38,6 +38,7 @@ public:
         TryFarmGas();
         TryBuildFactory();
         TryBuildStarport();
+        earlyrush();
         
         
 
@@ -149,12 +150,12 @@ public:
     			//small early game rush attempt
 				if (marinecount > 12 && !earlyAttacked && enemypos >= 0) { //check if we have enough marines
 					earlyAttacked = 1; //dont do it again
-					earlyrush(marinecount); //ATTACC
+					//earlyrush(marinecount); //ATTACC
 				}
     			break;
     		}
             case UNIT_TYPEID::TERRAN_STARPORT: {
-                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MEDIVAC);
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_VIKINGFIGHTER);
                 break;
             }
             case UNIT_TYPEID::TERRAN_FACTORY:{
@@ -222,7 +223,7 @@ private:
 				if (Point2D(scouter->pos) == game_info.enemy_start_locations[scouting]) {
 					++scouting; //move to next target next time
 				}
-				if (mineralpatches.size() <2) {
+				if (mineralpatches.size() <5) {
 					const Unit* target = FindNearestMineralPatch(scouter->pos);
 					if (target != nullptr) {
 						if (std::find(mineralpatches.begin(), mineralpatches.end(), target) != mineralpatches.end()) {
@@ -234,6 +235,19 @@ private:
 						}
 					}
 				}
+				if (mineralpatches.size() ==5) {
+					//check 2 3 4
+					if (Distance2D(mineralpatches[2]->pos, playerpos) > 10) {
+						mineralindex = 2;
+					}
+					else if (Distance2D(mineralpatches[3]->pos, playerpos) > 10) {
+						mineralindex = 3;
+					} 
+					else if (Distance2D(mineralpatches[4]->pos, playerpos) > 10) {
+						mineralindex = 4;
+					}
+					Actions()->UnitCommand(scouter, ABILITY_ID::MOVE, mineralpatches[mineralindex]->pos);
+				}
 			}
 			else if (!scouter->is_alive) {
 				enemypos = scouting;
@@ -242,13 +256,23 @@ private:
 		}
 	}
 	//attacks early game with marinecount marines to nearest enemy
-	void earlyrush(size_t marinecount) {
+	void earlyrush() {
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
-		for (size_t i = 0; i < marinecount; i++) //iterate through our marines
-		{
-			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); //attack selected target
-		}
+        sc2::Units tanks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SIEGETANK));
+        sc2::Units viking = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_VIKINGFIGHTER));
+        if (tanks.size() >= 3 && enemypos >= 0){
+            std::cout << "early rush" << std::endl;
+            for (size_t i = 0; i < marines.size(); i++){ //iterate through our marines
+                Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); //attack selected target
+            }
+            for (size_t j  = 0; j < tanks.size(); j++){
+                Actions()->UnitCommand(tanks[j], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+            }
+            for (size_t k  = 0; k < viking.size(); k++){
+                Actions()->UnitCommand(viking[k], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+            }
+        }
 	}
 	//find nearest enemy will return index of the nearest enemy base using x,y
 	int FindNearestEnemy(const GameInfo& game_info, sc2::Units barracks) {
@@ -285,6 +309,8 @@ private:
 		// Also get an scv to build the structure.
 		const Unit* unit_to_build = nullptr;
 		Units units = observation->GetUnits(Unit::Alliance::Self); // all units
+        Units commandcenter = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_COMMANDCENTER));
+        Units orbitalcommand = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_ORBITALCOMMAND));
 		for (const auto& unit : units) {
 			for (const auto& order : unit->orders) {
 				if (order.ability_id == ability_type_for_structure) {
@@ -296,9 +322,35 @@ private:
 			}
 		}
 
-		float rx = GetRandomScalar();
-		float ry = GetRandomScalar();
+		float rx;
+		float ry;
+		float dx;
+		float dy;
+		//use get random fraction instead and flip sign accordingly
+		//want to place buildings in a slightly defensive manner
+		if (playerpos.x < 100) {
+			//left side, so want positive rx
+			rx = GetRandomFraction();
+			dx = 3.0f;
+		}
+		else {
+			rx = -1 * GetRandomFraction();
+			dx = -3.0f;
 
+		}
+
+		if (playerpos.y< 100) {
+			//bottom, so want positive rx
+			ry = GetRandomFraction();
+			dy = 3.0f;
+		}
+		else {
+			ry = -1 * GetRandomFraction();
+			dy = -3.0f;
+		}
+		if (depth > 15.0f) {
+			depth = 1.0f;
+		}
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
@@ -307,16 +359,36 @@ private:
 			// Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base locatio
 			Actions()->UnitCommand(unit_to_build,
 			ability_type_for_structure,
-			Point2D(mineralpatches[1]->pos.x + rx * 5.0f, mineralpatches[1]->pos.y + ry * 5.0f));
-		} else {
-		  	Actions()->UnitCommand(unit_to_build,
-			ability_type_for_structure,
-			Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+			Point2D(mineralpatches[mineralindex]->pos.x + rx * 7.0f, mineralpatches[mineralindex]->pos.y + ry * 7.0f));
+		// } else {
+		//   	Actions()->UnitCommand(unit_to_build,
+		// 	ability_type_for_structure,
+		// 	Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+            /*
+            if (commandcenter.size() >0){
+                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(commandcenter.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+            }
+            else if (orbitalcommand.size() >0){
+                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(orbitalcommand.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+            }*/
+        } else {
+            if (commandcenter.size() >0){
+                Actions()->UnitCommand(unit_to_build,
+                                       ability_type_for_structure,
+                                       Point2D(commandcenter.front()->pos.x + (rx * depth)+dx, commandcenter.front()->pos.y + (ry * depth)+dy));
+                depth += 0.01f;
+            }
+            else if (orbitalcommand.size() >0){
+                Actions()->UnitCommand(unit_to_build,
+                                       ability_type_for_structure,
+                                       Point2D(orbitalcommand.front()->pos.x + (rx * depth)+dx, orbitalcommand.front()->pos.y + (ry * depth)+dy));
+                depth += 0.01f;
+            }
         }
 
 		return true;
 	}
-
+		
     // attempts to build supply depot
 	bool TryBuildSupplyDepot() {
 		const ObservationInterface* observation = Observation();
@@ -549,7 +621,9 @@ private:
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
 	bool haveTechLab = false;
+	float depth = 1.0f;
 	bool haveReactor = false;
+	int mineralindex;
 	std::vector<const Unit*> mineralpatches;
 };
 
