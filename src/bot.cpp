@@ -369,13 +369,13 @@ private:
             if (commandcenter.size() >0){
                 Actions()->UnitCommand(unit_to_build,
                                        ability_type_for_structure,
-                                       Point2D(commandcenter.front()->pos.x + (rx * depth)+dx, commandcenter.front()->pos.y + (ry * depth)+dy));
+                                       Point2D(commandcenter.front()->pos.x + ((rx * depth)+dx), commandcenter.front()->pos.y + ((ry * depth)+dy)));
                 depth += 0.05f;
             }
             else if (orbitalcommand.size() >0){
                 Actions()->UnitCommand(unit_to_build,
                                        ability_type_for_structure,
-                                       Point2D(orbitalcommand.front()->pos.x + (rx * depth)+dx, orbitalcommand.front()->pos.y + (ry * depth)+dy));
+                                       Point2D(orbitalcommand.front()->pos.x + ((rx * depth)+dx), orbitalcommand.front()->pos.y + ((ry * depth)+dy)));
                 depth += 0.05f;
             }
         }
