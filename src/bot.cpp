@@ -38,6 +38,7 @@ public:
         TryFarmGas();
         TryBuildFactory();
         TryBuildStarport();
+        earlyrush();
         
         
 
@@ -147,7 +148,7 @@ public:
     			//small early game rush attempt
 				if (marinecount > 12 && !earlyAttacked && enemypos >= 0) { //check if we have enough marines
 					earlyAttacked = 1; //dont do it again
-					earlyrush(marinecount); //ATTACC
+					//earlyrush(marinecount); //ATTACC
 				}
     			break;
     		}
@@ -240,13 +241,23 @@ private:
 		}
 	}
 	//attacks early game with marinecount marines to nearest enemy
-	void earlyrush(size_t marinecount) {
+	void earlyrush() {
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
-		for (size_t i = 0; i < marinecount; i++) //iterate through our marines
-		{
-			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); //attack selected target
-		}
+        sc2::Units tanks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SIEGETANK));
+        sc2::Units medivac = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MEDIVAC));
+        if (tanks.size() >= 3 && enemypos >= 0){
+            std::cout << "early rush" << std::endl;
+            for (size_t i = 0; i < marines.size(); i++){ //iterate through our marines
+                Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); //attack selected target
+            }
+            for (size_t j  = 0; j < tanks.size(); j++){
+                Actions()->UnitCommand(tanks[j], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+            }
+            for (size_t k  = 0; k < medivac.size(); k++){
+                Actions()->UnitCommand(medivac[k], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+            }
+        }
 	}
 	//find nearest enemy will return index of the nearest enemy base using x,y
 	int FindNearestEnemy(const GameInfo& game_info, sc2::Units barracks) {
