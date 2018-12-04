@@ -32,7 +32,7 @@ public:
         TryFarmGas();
         //TryUpdgradeBarracks();
         TryBuildFactory();
-        
+        TryBuildStarport();
         
         
 	}
@@ -138,6 +138,10 @@ public:
 
     			break;
     		}
+            case UNIT_TYPEID::TERRAN_STARPORT: {
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MEDIVAC);
+                break;
+            }
             case UNIT_TYPEID::TERRAN_FACTORY:{
                 size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
                 //Units tech_lab = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_TECHLAB));
@@ -303,6 +307,27 @@ private:
 		return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
 	}
         
+    bool TryBuildStarport() {
+        const ObservationInterface* observation = Observation();
+            
+            // can't build barracks without at least one supply depot
+        if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+            return false;
+        }
+            
+            // build first barracks only when supply is at 16
+        if (observation->GetFoodUsed() == 16) {
+            // std::cout << "BUILD BARRACKS" << std::endl;
+        }
+            
+            // if we have more than 1 barracks, don't build anymore
+        if (CountUnitType(UNIT_TYPEID::TERRAN_STARPORT) >= 1) {
+            return false;
+        }
+        
+        return TryBuildStructure(ABILITY_ID::BUILD_STARPORT); // conditions were passed and we delegate to TryBuildStructure()
+    }
+        
         
         
         
@@ -326,6 +351,8 @@ private:
             
         return TryBuildStructure(ABILITY_ID::BUILD_FACTORY); // conditions were passed and we delegate to TryBuildStructure()
     }
+        
+        
 
         
         
@@ -448,7 +475,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss)
+        CreateComputer(Race::Protoss, sc2::Medium)
 		});
 
 	coordinator.LaunchStarcraft();
