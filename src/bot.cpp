@@ -320,7 +320,9 @@ private:
 			ry = -1 * GetRandomFraction();
 			dy = -3.0f;
 		}
-		float depth = 1.0f;
+		if (depth > 15.0f) {
+			depth = 1.0f;
+		}
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
@@ -328,12 +330,12 @@ private:
 		  	Actions()->UnitCommand(unit_to_build,
 			ability_type_for_structure,
 			Point2D(unit_to_build->pos.x + (rx * depth)+dx, unit_to_build->pos.y + (ry * depth)+dy));
-			depth += 0.1f;
+			depth += 0.01f;
         }
 
 		return true;
 	}
-
+		
     // attempts to build supply depot
 	bool TryBuildSupplyDepot() {
 		const ObservationInterface* observation = Observation();
@@ -556,6 +558,7 @@ private:
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
 	bool haveTechLab = false;
+	float depth = 1.0f;
 	bool haveReactor = false;
 	std::vector<const Unit*> mineralpatches;
 };
