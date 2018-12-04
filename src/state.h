@@ -28,6 +28,7 @@ struct GameStart_SupplyDepot;
 struct GameStart_BuildArmy;
 struct GameStart_BuildBarracks;
 struct EarlyRushState;
+struct BuildTanks;
 
 
 // StateMachine is started in `MainState`
@@ -116,8 +117,20 @@ struct MainState : sc::simple_state<MainState, StateMachine, GameStart> {
 
 struct EarlyRushState : sc::simple_state<EarlyRushState, MainState> {
 	EarlyRushState() {
-		std::cout << "EarlyRushState state" << std::endl;
+		//std::cout << "EarlyRushState state" << std::endl;
+		attacked = false;
 	}
+	typedef sc::custom_reaction<StepEvent> reactions;
+	sc::result react(const StepEvent& event);
+	bool attacked;
+};
+
+struct BuildTanks : sc::simple_state<BuildTanks, MainState> {
+	BuildTanks() {
+		std::cout << "BuildTanks state" << std::endl;
+	}
+	typedef sc::custom_reaction<StepEvent> reactions;
+	sc::result react(const StepEvent& event);
 };
 
 // this state is responsible for gathering resources early in the game

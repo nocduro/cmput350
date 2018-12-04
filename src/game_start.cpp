@@ -55,9 +55,7 @@ sc::result GameStart_BuildBarracks::react(const StepEvent& event) {
 		return discard_event();
 	}
     
-
 	if (CountUnitType(observation, UNIT_TYPEID::TERRAN_BARRACKS) > 1) {
-		std::cout << "len of start pos: " << observation()->GetGameInfo().enemy_start_locations.size() << std::endl;
 		return transit<GameStart_Refinery>();
 	}
 
@@ -69,16 +67,15 @@ sc::result GameStart_BuildBarracks::react(const StepEvent& event) {
 // early rush attack
 sc::result GameStart_BuildArmy::react(const StepEvent& event) {
 	auto observation = context<StateMachine>().Observation;
+	auto actions = context<StateMachine>().Actions;
 
+	TryBuildSupplyDepot(actions, observation);
 	// wait for scouter to find enemy base
 	if (scouter == nullptr || scouter->is_alive) {
 		return discard_event();
 	}
-
 	context<MainState>().enemy_pos = scouting;
-	std::cout << "enemy position index: " << scouting << std::endl;
 	
-
 	if (CountUnitType(observation, UNIT_TYPEID::TERRAN_MARINE) > 12) {
 		return transit<EarlyRushState>();
 	}
@@ -98,7 +95,6 @@ sc::result GameStart_BuildArmy::react(const MarineIdle& event) {
 	else if (scouter == event.unit) {
 		// move scouter to next position
 		++scouting;
-		//move marine to enemy base location 
 		Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]);
 	}
 	return discard_event();

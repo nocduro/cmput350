@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss)
+		CreateComputer(Race::Protoss, sc2::Medium)
 		});
 
 	coordinator.LaunchStarcraft();
