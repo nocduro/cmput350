@@ -78,6 +78,8 @@ public:
             // if scv is idle, make it do something productive
     		case UNIT_TYPEID::TERRAN_SCV: {
                 size_t countSCV = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
+				size_t countRef = CountUnitType(UNIT_TYPEID::TERRAN_REFINERY);
+				size_t countCC = CountUnitType(UNIT_TYPEID::TERRAN_COMMANDCENTER) + CountUnitType(UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
     			const Unit* mineral_target = FindNearestMineralPatch(unit->pos);
     			const Unit* gas_target = FindNearestObject(unit->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER);
                 const Unit* refinery_target = FindNearestObject(unit->pos,UNIT_TYPEID::TERRAN_REFINERY);
@@ -85,8 +87,8 @@ public:
 
 				// if scv is idle and supply is equal to 19, build a second command center
 				if (observation->GetFoodUsed() >= 19) {
-					std::cout << mineralpatches[0]->pos.x << ", " << mineralpatches[0]->pos.y << std::endl;
-					std::cout << mineralpatches[1]->pos.x << ", " << mineralpatches[1]->pos.y << std::endl;
+					//std::cout << mineralpatches[0]->pos.x << ", " << mineralpatches[0]->pos.y << std::endl;
+					//std::cout << mineralpatches[1]->pos.x << ", " << mineralpatches[1]->pos.y << std::endl;
 					TryBuildSecondCC();
 				}
 
@@ -100,19 +102,15 @@ public:
                     
                     break;// send idle worker to gas
                 }
-    			if (gas_target){
+    			if (gas_target && (countRef < 2*countCC)){
                     TryBuildRefinery();
 				}
             
     			else {
-                    if (countSCV < 14){
-                        Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);// send idle worker to mineral patch
-                    }
-                    else{
-                        Actions()->UnitCommand(unit, ABILITY_ID::HARVEST_GATHER, refinery_target);
-                    }
-    				break;
+					Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
+					TryFarmGas();
     			}
+				
     		}
     		case UNIT_TYPEID::TERRAN_BARRACKS: {
                 size_t countReactor = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKSREACTOR);
@@ -301,6 +299,8 @@ private:
 		// If any unit already is building a supply structure of this type, do nothing.
 		// Also get an scv to build the structure.
 		const Unit* unit_to_build = nullptr;
+
+		
 		Units units = observation->GetUnits(Unit::Alliance::Self); // all units
         Units commandcenter = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_COMMANDCENTER));
         Units orbitalcommand = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_ORBITALCOMMAND));
@@ -324,25 +324,18 @@ private:
 		if (playerpos.x < 100) {
 			//left side, so want positive rx
 			rx = GetRandomFraction();
-			dx = 0.5f;
 		}
 		else {
 			rx = -1 * GetRandomFraction();
-			dx = -0.5f;
-
 		}
 		if (playerpos.y< 100) {
 			//bottom, so want positive rx
 			ry = GetRandomFraction();
-			dy = 0.5f;
 		}
 		else {
 			ry = -1 * GetRandomFraction();
-			dy = -0.5f;
 		}
-		if (depth > 15.0f) {
-			depth = 1.0f;
-		}
+
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
@@ -369,15 +362,17 @@ private:
             if (commandcenter.size() >0){
                 Actions()->UnitCommand(unit_to_build,
                                        ability_type_for_structure,
-                                       Point2D(commandcenter.front()->pos.x + ((rx * depth)+dx), commandcenter.front()->pos.y + ((ry * depth)+dy)));
-                depth += 0.05f;
+                                       Point2D(commandcenter.front()->pos.x + (rx * depth), commandcenter.front()->pos.y + (ry * depth)));
             }
             else if (orbitalcommand.size() >0){
                 Actions()->UnitCommand(unit_to_build,
                                        ability_type_for_structure,
-                                       Point2D(orbitalcommand.front()->pos.x + ((rx * depth)+dx), orbitalcommand.front()->pos.y + ((ry * depth)+dy)));
-                depth += 0.05f;
+                                       Point2D(orbitalcommand.front()->pos.x + (rx * depth), orbitalcommand.front()->pos.y + (ry * depth)));
             }
+			if (depth < 15.0f) {
+				depth += 0.5f;
+			}
+			
         }
 
 		return true;
@@ -615,7 +610,7 @@ private:
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
 	bool haveTechLab = false;
-	float depth = 1.0f;
+	float depth = 5.0f;
 	bool haveReactor = false;
 	int mineralindex;
 	std::vector<const Unit*> mineralpatches;
