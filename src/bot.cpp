@@ -2,6 +2,9 @@
 #include "sc2api/sc2_map_info.h"
 #include <iostream>
 #include <math.h>
+#include <algorithm>
+#include <ctime>
+
 
 using namespace sc2;
 
@@ -19,39 +22,35 @@ struct IsVespeneGeyser {
 class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
-		
 		std::cout << "Can I get a pogchamp in the chat?" << std::endl;
-		const GameInfo& game_info = Observation()->GetGameInfo();
-		playerpos = getPlayerPos(game_info.enemy_start_locations);
-		std::cout << "We are starting at: (" <<playerpos.x << ", " << playerpos.y << ")"<< std::endl;
 	}
 
 	virtual void OnStep() final {
 		TryBuildSupplyDepot();
 		TryBuildBarracks();
+
         TryFarmGas();
         //TryUpdgradeBarracks();
         TryBuildFactory();
         TryBuildStarport();
         
         
+
 	}
 
 	virtual void OnUnitIdle(const Unit* unit) final {
-
         const ObservationInterface* observation = Observation();
-		
 		switch (unit->unit_type.ToType()) {
-
             // if command center is idle, makes scvs (should be running constantly)
     		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
                 size_t scvCount = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
                 if (scvCount <= 30){
                     Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
                 }
+
     			break;
     		}
-
+			
             // if scv is idle, make it do something productive
     		case UNIT_TYPEID::TERRAN_SCV: {
                 size_t countSCV = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
@@ -110,13 +109,14 @@ public:
     			break;
     		}
     		case UNIT_TYPEID::TERRAN_MARINE: {
+				Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
 				const GameInfo& game_info = Observation()->GetGameInfo();
 				size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE); // get number of marines
 				
 				if (marinecount==1 && !earlyAttacked) {
 					scouter = unit; 
 				}
-    			Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
+    			
     			if (enemypos<0) { //check if we already found enemy base
     				// start scouting
                     /*
@@ -129,13 +129,18 @@ public:
 						enemypos = scouting-1;
 						std::cout << "enemy at pos " << enemypos << std::endl;
 					}*/
-    			}
-    			//small early game rush attempt
-    			if (marinecount > 12 && !earlyAttacked && enemypos>=0) { //check if we have enough marines
-    				earlyAttacked = 1; //dont do it again
-    				earlyrush(marinecount, enemypos); //ATTACC
-    			}
 
+    			}
+				if (earlyAttacked && allowPatrol) {
+					Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, patrolpoints[patrolpos]); //go to patrol point
+					patrolpos++;
+					patrolpos = patrolpos % 3;
+				}
+    			//small early game rush attempt
+				if (marinecount > 12 && !earlyAttacked && enemypos >= 0) { //check if we have enough marines
+					earlyAttacked = 1; //dont do it again
+					earlyrush(marinecount); //ATTACC
+				}
     			break;
     		}
             case UNIT_TYPEID::TERRAN_STARPORT: {
@@ -167,13 +172,11 @@ public:
 	}
 private:
 	//attacks early game with marinecount marines to nearest enemy
-	void earlyrush(size_t marinecount, int enemypos) {
+	void earlyrush(size_t marinecount) {
+		start = std::clock();
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
-		sc2::Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)); //get our marine units
-		//int target = FindNearestEnemy(game_info, barracks); //find closest enemy
-		
-		
+			
 		for (size_t i = 0; i < marinecount; i++) //iterate through our marines
 		{
 			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); //attack selected target
@@ -370,37 +373,18 @@ private:
 		startlocations.push_back(Point2D(158.5, 33.5));
 		startlocations.push_back(Point2D(158.5, 158.5));
 		//(33.5,33.5)	(33.5, 158.5)	(158.5, 33.5)	(158.5, 158.5)
-		bool selfpos[] = {true,true,true,true};
-		for (Point2D pos : enemylocations) {
-			if (pos.x == 33.5) {
-				if (pos.y == 33.5) {
-					//enemy at 33.5, 33.5
-					selfpos[0] = false; //not our position.
-				}
-				if (pos.y == 158.5) {
-					selfpos[1] = false;
-				}
+		for (Point2D pos : startlocations) {
+			if (std::find(enemylocations.begin(), enemylocations.end(), pos) != enemylocations.end()) {
+				// not our starting position
 			}
-			if (pos.x == 158.5) {
-				if (pos.y == 33.5) {
-					//enemy at 33.5, 33.5
-					selfpos[0] = false; //not our position.
-				}
-				if (pos.y == 158.5) {
-					selfpos[1] = false;
-				}
+			else {
+				//our starting position
+				return pos;
 			}
 		}
-		//one of self pos must still be true
-		//find which one and return point related to it
-		int index = 0;
-		for (bool truth : selfpos) {
-			if (!truth) {
-				++index;
-			}
-		}
-		return startlocations[index];
+		return Point2D(); //somehow we dont exist and have returned a null point2d
 	}
+
 
 
         
@@ -459,13 +443,15 @@ private:
     }
         
  
+
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
 	const Unit *scouter; //marine unit used for scouting earlygame
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
-    bool haveTechLab = false;
-    bool haveReactor = false;
+  bool haveTechLab = false;
+  bool haveReactor = false;
+
 };
 
 int main(int argc, char* argv[]) {
