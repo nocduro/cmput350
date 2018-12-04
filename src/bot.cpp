@@ -221,7 +221,7 @@ private:
 				if (Point2D(scouter->pos) == game_info.enemy_start_locations[scouting]) {
 					++scouting; //move to next target next time
 				}
-				if (mineralpatches.size() <2) {
+				if (mineralpatches.size() <5) {
 					const Unit* target = FindNearestMineralPatch(scouter->pos);
 					if (target != nullptr) {
 						if (std::find(mineralpatches.begin(), mineralpatches.end(), target) != mineralpatches.end()) {
@@ -232,6 +232,19 @@ private:
 							std::cout << target->pos.x << " " << target->pos.y << std::endl;
 						}
 					}
+				}
+				if (mineralpatches.size() ==5) {
+					//check 2 3 4
+					if (Distance2D(mineralpatches[2]->pos, playerpos) > 10) {
+						mineralindex = 2;
+					}
+					else if (Distance2D(mineralpatches[3]->pos, playerpos) > 10) {
+						mineralindex = 3;
+					} 
+					else if (Distance2D(mineralpatches[4]->pos, playerpos) > 10) {
+						mineralindex = 4;
+					}
+					Actions()->UnitCommand(scouter, ABILITY_ID::MOVE, mineralpatches[mineralindex]->pos);
 				}
 			}
 			else if (!scouter->is_alive) {
@@ -571,6 +584,7 @@ private:
 	bool haveTechLab = false;
 	float depth = 1.0f;
 	bool haveReactor = false;
+	int mineralindex;
 	std::vector<const Unit*> mineralpatches;
 };
 
