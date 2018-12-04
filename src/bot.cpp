@@ -294,16 +294,41 @@ private:
 			}
 		}
 
-		float rx = GetRandomScalar();
-		float ry = GetRandomScalar();
+		float rx;
+		float ry;
+		float dx;
+		float dy;
+		//use get random fraction instead and flip sign accordingly
+		//want to place buildings in a slightly defensive manner
+		if (playerpos.x < 100) {
+			//left side, so want positive rx
+			rx = GetRandomFraction();
+			dx = 2.0f;
+		}
+		else {
+			rx = -1 * GetRandomFraction();
+			dx = -2.0f;
 
+		}
+
+		if (playerpos.y< 100) {
+			//bottom, so want positive rx
+			ry = GetRandomFraction();
+			dy = 2.0f;
+		}
+		else {
+			ry = -1 * GetRandomFraction();
+			dy = -2.0f;
+		}
+		float depth = 1.0f;
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
         } else {
 		  	Actions()->UnitCommand(unit_to_build,
 			ability_type_for_structure,
-			Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+			Point2D(unit_to_build->pos.x + (rx * depth)+dx, unit_to_build->pos.y + (ry * depth)+dy));
+			depth += 0.1f;
         }
 
 		return true;
