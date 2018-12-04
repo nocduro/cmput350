@@ -29,7 +29,12 @@ public:
 	virtual void OnStep() final {
 		TryBuildSupplyDepot();
 		TryBuildBarracks();
-        //TryFarmGas();
+        TryFarmGas();
+        //TryUpdgradeBarracks();
+        TryBuildFactory();
+        
+        
+        
 	}
 
 	virtual void OnUnitIdle(const Unit* unit) final {
@@ -41,7 +46,7 @@ public:
             // if command center is idle, makes scvs (should be running constantly)
     		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
                 size_t scvCount = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
-                if (scvCount <= 16){
+                if (scvCount <= 30){
                     Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
                 }
     			break;
@@ -53,6 +58,7 @@ public:
     			const Unit* mineral_target = FindNearestMineralPatch(unit->pos);
     			const Unit* gas_target = FindNearestObject(unit->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER);
                 const Unit* refinery_target = FindNearestObject(unit->pos,UNIT_TYPEID::TERRAN_REFINERY);
+                Units Refinerys = Observation()->GetUnits(Unit::Alliance::Neutral, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
     			if (!mineral_target) {
                     // TryBuildRefinery();
     				// Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target); // send idle worker to gas
@@ -64,26 +70,40 @@ public:
                     break;// send idle worker to gas
                 }
     			if (gas_target){
-                    TryBuildRefinery(); // build refinery if a gas patch is found
-                    
-                    // Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
-    				// Actions()->UnitCommand(unit, ABILITY_ID::BUILD_REFINERY, gas_target);
-    				break;
+                    TryBuildRefinery();
 				}
-                if (refinery_target){
-                    Actions()->UnitCommand(unit, ABILITY_ID::SMART, refinery_target);
-                    break;
-                }
+                
+                /*if (Refinerys.size() > 0){
+                    for ( const auto& refinery: Refinerys){
+                        if (refinery->assigned_harvesters < refinery->ideal_harvesters){
+                            Actions()->UnitCommand(unit,ABILITY_ID::HARVEST_GATHER,refinery);
+                            std::cout << "here" << std::endl;
+                        }
+                    }
+                }*/
                 
     			else {
-                    if (countSCV <10){
-                        Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
+                    if (countSCV <14){
+                        Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);// send idle worker to mineral patch
+                    }
+                    else{
+                        Actions()->UnitCommand(unit, ABILITY_ID::HARVEST_GATHER, refinery_target);
                     }
     				break;
     			}
     		}
     		case UNIT_TYPEID::TERRAN_BARRACKS: {
-                BuildOrder(unit);
+                size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB);
+                if (counttech_lab < 1 && !haveTechLab){
+                    std::cout << "here" << std::endl;
+                    Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
+                    std::cout << "here2" << std::endl;
+                    if (counttech_lab >=1){
+                        haveTechLab = true;
+                    }
+                }else{
+                    //BuildOrder(unit);
+                }
     			//Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
     			break;
     		}
@@ -255,13 +275,65 @@ private:
             // std::cout << "BUILD BARRACKS" << std::endl;
         }
 
-        // if we have more than 2 barracks, don't build anymore
-		if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 2) {
+        // if we have more than 1 barracks, don't build anymore
+		if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) >= 1) {
 			return false;
 		}
 
 		return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
 	}
+        
+        
+    bool TryUpdgradeBarracks() {
+        const ObservationInterface* observation = Observation();
+            
+            // can't build barracks without at least one supply depot
+        if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+            return false;
+        }
+            
+            // build first barracks only when supply is at 16
+        if (observation->GetFoodUsed() == 16) {
+                // std::cout << "BUILD BARRACKS" << std::endl;
+        }
+            
+            // if we have more than 1 barracks, don't build anymore
+        if (CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB) > 1) {
+            return false;
+        }
+            
+        return TryBuildStructure(ABILITY_ID::BUILD_TECHLAB_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
+    }
+        
+        
+    bool TryBuildFactory() {
+        const ObservationInterface* observation = Observation();
+            
+            // can't build barracks without at least one supply depot
+        if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+            return false;
+        }
+            
+            // build first barracks only when supply is at 16
+        if (observation->GetFoodUsed() == 16) {
+                // std::cout << "BUILD BARRACKS" << std::endl;
+        }
+            
+            // if we have more than 1 barracks, don't build anymore
+        if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) > 1) {
+            return false;
+        }
+            
+        return TryBuildStructure(ABILITY_ID::BUILD_FACTORY); // conditions were passed and we delegate to TryBuildStructure()
+    }
+
+        
+        
+        
+        
+        
+        
+        
 
 	sc2::Point2D getPlayerPos(std::vector<sc2::Point2D> enemylocations) {
 		//Starting positions within the map
@@ -329,23 +401,33 @@ private:
         size_t countreaper = CountUnitType(UNIT_TYPEID::TERRAN_REAPER);
         size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB);
         
-        if (countMarine > 10 && countreaper < 5){
+        /*if (countMarine > 10 && countreaper < 5){
             Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_REAPER);
         }
         else if (counttech_lab >= 1){
             Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARAUDER);
         }
-        else if (mineral > 50 && vespene >25){
+        if (mineral > 50 && vespene >25){
             Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
-        }
-        else{
-            Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
-        }
+        }*/
+        
+        Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+        
             
     }
         
     void TryFarmGas(){
+        Units Refinerys = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
         
+        for ( const auto& refinery: Refinerys){
+            Units Workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
+            
+            if (refinery->assigned_harvesters < refinery->ideal_harvesters){
+                Actions()->UnitCommand(Workers.front(),ABILITY_ID::HARVEST_GATHER,refinery);
+                std::cout << "here" << std::endl;
+            }
+            
+        }
         
     }
         
@@ -355,6 +437,7 @@ private:
 	const Unit *scouter; //marine unit used for scouting earlygame
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
+    bool haveTechLab = false;
 };
 
 int main(int argc, char* argv[]) {
