@@ -637,6 +637,8 @@ int main(int argc, char* argv[]) {
         CreateComputer(Race::Protoss, sc2::Medium)
 		});
 
+	coordinator.SetWindowSize(2000,1500);
+
 	coordinator.LaunchStarcraft();
 	//have to include a hard coded path to the map
 	coordinator.StartGame("CactusValleyLE.SC2Map");
