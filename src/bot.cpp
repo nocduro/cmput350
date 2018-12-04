@@ -64,6 +64,16 @@ public:
 
     			break;
     		}
+            case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: {
+                size_t scvCount = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
+                
+                if (scvCount <= 30){
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
+                }
+                
+                break;
+            }
+                
 			
             // if scv is idle, make it do something productive
     		case UNIT_TYPEID::TERRAN_SCV: {
@@ -93,16 +103,7 @@ public:
     			if (gas_target){
                     TryBuildRefinery();
 				}
-                
-                /*if (Refinerys.size() > 0){
-                    for ( const auto& refinery: Refinerys){
-                        if (refinery->assigned_harvesters < refinery->ideal_harvesters){
-                            Actions()->UnitCommand(unit,ABILITY_ID::HARVEST_GATHER,refinery);
-                            std::cout << "here" << std::endl;
-                        }
-                    }
-                }*/
-                
+            
     			else {
                     if (countSCV < 14){
                         Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);// send idle worker to mineral patch
@@ -114,17 +115,6 @@ public:
     			}
     		}
     		case UNIT_TYPEID::TERRAN_BARRACKS: {
-                // size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB);
-                // if (counttech_lab < 1 && !haveTechLab){
-                //     std::cout << "Build TechLab" << std::endl;
-                //     Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
-                //     // std::cout << "here2" << std::endl;
-                //     if (counttech_lab >=1){
-                //         haveTechLab = true;
-                //     }
-                // } else {
-                //     //BuildOrder(unit);
-				// }
                 size_t countReactor = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKSREACTOR);
                 if (countReactor < 1 && !haveReactor){
                   
@@ -155,7 +145,10 @@ public:
     			break;
     		}
             case UNIT_TYPEID::TERRAN_STARPORT: {
-                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_VIKINGFIGHTER);
+                size_t countanks = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK);
+                if (countanks >= 2){
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_VIKINGFIGHTER);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_FACTORY:{
@@ -331,22 +324,21 @@ private:
 		if (playerpos.x < 100) {
 			//left side, so want positive rx
 			rx = GetRandomFraction();
-			dx = 3.0f;
+			dx = 0.5f;
 		}
 		else {
 			rx = -1 * GetRandomFraction();
-			dx = -3.0f;
+			dx = -0.5f;
 
 		}
-
 		if (playerpos.y< 100) {
 			//bottom, so want positive rx
 			ry = GetRandomFraction();
-			dy = 3.0f;
+			dy = 0.5f;
 		}
 		else {
 			ry = -1 * GetRandomFraction();
-			dy = -3.0f;
+			dy = -0.5f;
 		}
 		if (depth > 15.0f) {
 			depth = 1.0f;
@@ -354,6 +346,7 @@ private:
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+
         } else if (ability_type_for_structure == ABILITY_ID::BUILD_COMMANDCENTER) {
 			std::cout << "Trying to build CC" << std::endl;
 			// Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base locatio
@@ -371,18 +364,19 @@ private:
             else if (orbitalcommand.size() >0){
                 Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(orbitalcommand.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
             }*/
+
         } else {
             if (commandcenter.size() >0){
                 Actions()->UnitCommand(unit_to_build,
                                        ability_type_for_structure,
-                                       Point2D(commandcenter.front()->pos.x + (rx * depth)+dx, commandcenter.front()->pos.y + (ry * depth)+dy));
-                depth += 0.01f;
+                                       Point2D(commandcenter.front()->pos.x + ((rx * depth)+dx), commandcenter.front()->pos.y + ((ry * depth)+dy)));
+                depth += 0.05f;
             }
             else if (orbitalcommand.size() >0){
                 Actions()->UnitCommand(unit_to_build,
                                        ability_type_for_structure,
-                                       Point2D(orbitalcommand.front()->pos.x + (rx * depth)+dx, orbitalcommand.front()->pos.y + (ry * depth)+dy));
-                depth += 0.01f;
+                                       Point2D(orbitalcommand.front()->pos.x + ((rx * depth)+dx), orbitalcommand.front()->pos.y + ((ry * depth)+dy)));
+                depth += 0.05f;
             }
         }
 
@@ -598,23 +592,23 @@ private:
             
     }
         
-    void TryFarmGas(){
+	void TryFarmGas(){
         Units Refinerys = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
         
         for ( const auto& refinery: Refinerys){
             Units Workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
             
             if (refinery->assigned_harvesters < refinery->ideal_harvesters){
-                Actions()->UnitCommand(Workers.front(),ABILITY_ID::HARVEST_GATHER,refinery);
+				if (scouter != Workers.front()) {
+					Actions()->UnitCommand(Workers.front(), ABILITY_ID::HARVEST_GATHER, refinery);
+				}
+                
                 //std::cout << "here" << std::endl;
             }
             
         }
         
-    }
-        
- 
-
+	}
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
 	const Unit *scouter = NULL; //marine unit used for scouting earlygame
@@ -634,7 +628,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-        CreateComputer(Race::Protoss, sc2::Medium)
+        CreateComputer(Race::Protoss, sc2::MediumHard)
 		});
 
 	coordinator.SetWindowSize(2000,1500);
