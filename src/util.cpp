@@ -50,7 +50,6 @@ bool TryBuildStructure(action_t Actions, observation_t Observation, ABILITY_ID a
 		Actions()->UnitCommand(unit_to_build,
 			ability_type_for_structure,
 			Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
-		std::cout << "built structure" << std::endl;
 	}
 
 	return true;
@@ -122,4 +121,13 @@ bool FarmGas(action_t Actions, observation_t Observation){
      
     
     return false;
+}
+
+bool GetRandomUnit(const Unit*& unit_out, observation_t Observation, UnitTypeID unit_type) {
+	Units units = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(unit_type));
+	if (!units.empty()) {
+		unit_out = GetRandomEntry(units);
+		return true;
+	}
+	return false;
 }

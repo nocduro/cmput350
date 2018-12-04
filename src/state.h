@@ -8,6 +8,8 @@
 #include <boost/statechart/custom_reaction.hpp>
 #include <boost/mpl/list.hpp>
 #include <iostream>
+#include <map>
+#include <set>
 #include "bot.h"
 #include "util.h"
 
@@ -77,7 +79,10 @@ struct MarineIdle : sc::event<MarineIdle> {
 	MarineIdle(const Unit* u) : unit(u) {}
 	const Unit* unit; 
 };
-
+struct UnitCreated : sc::event<UnitCreated> {
+	const Unit* unit;
+	UnitCreated(const Unit* u) : unit(u) {}
+};
 
 
 /*
@@ -121,9 +126,15 @@ struct GameStart : sc::simple_state<GameStart, MainState, GameStart_BuildBarrack
 struct GameStart_Refinery : sc::simple_state<GameStart_Refinery, GameStart> {
 	GameStart_Refinery() {
 		std::cout << "GameStart_Refinery state" << std::endl;
+		workers_offset = 0;
 	}
-	typedef sc::custom_reaction<StepEvent> reactions;
+	typedef mpl::list<
+		sc::custom_reaction<StepEvent>,
+		sc::custom_reaction<UnitCreated>
+	> reactions;
 	sc::result react(const StepEvent& event);
+	sc::result react(const UnitCreated& event);
+	size_t workers_offset;
 };
 
 struct GameStart_BuildArmy : sc::simple_state<GameStart_BuildArmy, GameStart> {

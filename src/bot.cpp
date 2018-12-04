@@ -58,7 +58,9 @@ public:
 		}
 	}
 
-	virtual void OnUnitCreated(const Unit* unit) final {}
+	virtual void OnUnitCreated(const Unit* unit) final {
+		sm.process_event(UnitCreated(unit));
+	}
 	virtual void OnUpgradeComplete(UpgradeID) {}
 	virtual void OnBuildingConstructionComplete(const Unit* unit) {}
 	virtual void OnNydusDetected() {}
