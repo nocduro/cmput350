@@ -28,19 +28,14 @@ public:
 	virtual void OnStep() final {
 		TryBuildSupplyDepot();
 		TryBuildBarracks();
-		const GameInfo& game_info = Observation()->GetGameInfo();
-		if (enemypos > -1) {//know where the enemy is
-			playerpos = getPlayerPos(game_info.enemy_start_locations);
-			getPatrolPoints(playerpos, game_info.enemy_start_locations[enemypos]);
-		}
-		double duration=0;
-		if (earlyAttacked) {
-			duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		}
-		if (duration > 40) {
-			allowPatrol = true;
-		}
-		
+
+        TryFarmGas();
+        //TryUpdgradeBarracks();
+        TryBuildFactory();
+        TryBuildStarport();
+        
+        
+
 	}
 
 	virtual void OnUnitIdle(const Unit* unit) final {
@@ -48,33 +43,69 @@ public:
 		switch (unit->unit_type.ToType()) {
             // if command center is idle, makes scvs (should be running constantly)
     		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
-    			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
+                size_t scvCount = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
+                if (scvCount <= 30){
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
+                }
+
     			break;
     		}
 			
             // if scv is idle, make it do something productive
     		case UNIT_TYPEID::TERRAN_SCV: {
+                size_t countSCV = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
     			const Unit* mineral_target = FindNearestMineralPatch(unit->pos);
-    			const Unit* gas_target = FindNearestGasPatch(unit->pos);
+    			const Unit* gas_target = FindNearestObject(unit->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER);
+                const Unit* refinery_target = FindNearestObject(unit->pos,UNIT_TYPEID::TERRAN_REFINERY);
+                Units Refinerys = Observation()->GetUnits(Unit::Alliance::Neutral, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
     			if (!mineral_target) {
                     // TryBuildRefinery();
     				// Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target); // send idle worker to gas
                     break;
     			}
                 if (observation->GetFoodUsed() == 15) {
-                    Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target); // send idle worker to gas
+                    Actions()->UnitCommand(unit, ABILITY_ID::SMART, gas_target);
+                    
+                    break;// send idle worker to gas
                 }
     			if (gas_target){
-                    TryBuildRefinery(); // build refinery if a gas patch is found
-                    // Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
-    				// Actions()->UnitCommand(unit, ABILITY_ID::BUILD_REFINERY, gas_target);
+                    TryBuildRefinery();
 				}
-    			Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target); // send idle worker to mineral patch
-    			break;
-    			
+                
+                /*if (Refinerys.size() > 0){
+                    for ( const auto& refinery: Refinerys){
+                        if (refinery->assigned_harvesters < refinery->ideal_harvesters){
+                            Actions()->UnitCommand(unit,ABILITY_ID::HARVEST_GATHER,refinery);
+                            std::cout << "here" << std::endl;
+                        }
+                    }
+                }*/
+                
+    			else {
+                    if (countSCV <14){
+                        Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);// send idle worker to mineral patch
+                    }
+                    else{
+                        Actions()->UnitCommand(unit, ABILITY_ID::HARVEST_GATHER, refinery_target);
+                    }
+    				break;
+    			}
     		}
     		case UNIT_TYPEID::TERRAN_BARRACKS: {
-    			Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+                size_t countReactor = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKSREACTOR);
+                if (countReactor < 1 && !haveReactor){
+                  
+                    Actions()->UnitCommand(unit, ABILITY_ID::BUILD_REACTOR);
+                    
+                    if (countReactor >=1){
+                        haveReactor = true;
+                    }
+                }else{
+                    //Train 2 marines at once
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+                }
+    			
     			break;
     		}
     		case UNIT_TYPEID::TERRAN_MARINE: {
@@ -88,6 +119,7 @@ public:
     			
     			if (enemypos<0) { //check if we already found enemy base
     				// start scouting
+                    /*
 					if (unit == scouter && scouter->health > 0) {
 						std::cout << "scouter still alive" << std::endl;
 						Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
@@ -96,10 +128,8 @@ public:
 					else if(!scouter->is_alive){
 						enemypos = scouting-1;
 						std::cout << "enemy at pos " << enemypos << std::endl;
-						if (enemypos > -1) {
-							
-						}
-					}
+					}*/
+
     			}
 				if (earlyAttacked && allowPatrol) {
 					Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, patrolpoints[patrolpos]); //go to patrol point
@@ -113,6 +143,27 @@ public:
 				}
     			break;
     		}
+            case UNIT_TYPEID::TERRAN_STARPORT: {
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MEDIVAC);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_FACTORY:{
+                size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+                //Units tech_lab = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_TECHLAB));
+                if (counttech_lab < 1 && !haveTechLab){
+                    std::cout << "here" << std::endl;
+                    Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
+                    std::cout << "here2" << std::endl;
+                    if (counttech_lab >=1){
+                        haveTechLab = true;
+                        std::cout << "here3" << std::endl;
+                        
+                    }
+                }else{
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SIEGETANK);
+                    std::cout << "here4" << std::endl;
+                }
+            }
     		default: {
     			break;
     		}
@@ -179,7 +230,7 @@ private:
 		float ry = GetRandomScalar();
 
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
-            Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestGasPatch(unit_to_build->pos));
+            Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
         } else {
 		  Actions()->UnitCommand(unit_to_build,
 			ability_type_for_structure,
@@ -199,7 +250,7 @@ private:
         }
 
 		// If we are not supply capped, don't build a supply depot.
-		if (observation->GetFoodUsed() <= observation->GetFoodCap() - 2)
+		if (observation->GetFoodUsed() <= observation->GetFoodCap() - 15)
 			return false;
 
         // std::cout << observation->GetFoodUsed() << " " << observation->GetFoodCap() << std::endl;
@@ -251,13 +302,68 @@ private:
             // std::cout << "BUILD BARRACKS" << std::endl;
         }
 
-        // if we have more than 2 barracks, don't build anymore
-		if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) > 2) {
+        // if we have more than 1 barracks, don't build anymore
+		if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) >= 1) {
 			return false;
 		}
 
 		return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
 	}
+        
+    bool TryBuildStarport() {
+        const ObservationInterface* observation = Observation();
+            
+            // can't build barracks without at least one supply depot
+        if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+            return false;
+        }
+            
+            // build first barracks only when supply is at 16
+        if (observation->GetFoodUsed() == 16) {
+            // std::cout << "BUILD BARRACKS" << std::endl;
+        }
+            
+            // if we have more than 1 barracks, don't build anymore
+        if (CountUnitType(UNIT_TYPEID::TERRAN_STARPORT) >= 1) {
+            return false;
+        }
+        
+        return TryBuildStructure(ABILITY_ID::BUILD_STARPORT); // conditions were passed and we delegate to TryBuildStructure()
+    }
+        
+        
+        
+        
+    bool TryBuildFactory() {
+        const ObservationInterface* observation = Observation();
+            
+            // can't build barracks without at least one supply depot
+        if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) < 1) {
+            return false;
+        }
+            
+            // build first barracks only when supply is at 16
+        if (observation->GetFoodUsed() == 16) {
+                // std::cout << "BUILD BARRACKS" << std::endl;
+        }
+            
+            // if we have more than 1 barracks, don't build anymore
+        if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) >= 1) {
+            return false;
+        }
+            
+        return TryBuildStructure(ABILITY_ID::BUILD_FACTORY); // conditions were passed and we delegate to TryBuildStructure()
+    }
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
 
 	sc2::Point2D getPlayerPos(std::vector<sc2::Point2D> enemylocations) {
 		//Starting positions within the map
@@ -279,169 +385,73 @@ private:
 		return Point2D(); //somehow we dont exist and have returned a null point2d
 	}
 
-    // finds the nearest gas patch in relation to unit
-	const Unit* FindNearestGasPatch(const Point2D& start) {
-		Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
-		float distance = std::numeric_limits<float>::max();
-		const Unit* target = nullptr;
-		for (const auto& u : units) {
-			if (u->unit_type == UNIT_TYPEID::NEUTRAL_VESPENEGEYSER) {
-				float d = DistanceSquared2D(u->pos, start);
-				if (d < distance) {
-					distance = d;
-					target = u;
-				}
-			}
-		}
-		return target;
-	}
-
-	//function called once we know our enemies position, so we can patrol the correct part of our base
-	// appends Point2D objects (3) to the vector patrolpoints.
-	void getPatrolPoints(Point2D mypos, Point2D enemypos) {
-		bool xadj = false; // will use these to determine which patrol points to send units to
-		bool yadj = false; //used to indicate if enemy adjacent in any axis
-		bool selfcorner[] = { false,false,false,false }; // need to find which corner we are in to filter out garbage patrol points
-		// ordered in terms of corners BL, TL, TR, BR
-		if (mypos.x < 100) {
-			//left side of map
-			if (mypos.y < 100) {
-				//bottom side of map
-				selfcorner[0] = true;
-			}
-			else {
-				//topside of map
-				selfcorner[1] = true;
-			}
-		}
-		else {
-			//right side of map
-			if (mypos.y > 100) {
-				//bottom side of map
-				selfcorner[2] = true;
-			}
-			else {
-				//topside of map
-				selfcorner[3] = true;
-			}
-		}
-		
-		
-		if (mypos.x == enemypos.x) {
-			xadj = true;
-		}
-		if (mypos.y == enemypos.y) {
-			yadj = true;
-		}
-		// now know enemies position relative to us in terms of adjacency
-
-		std::vector<Point2D> allpatrols; // all the possible patrol points
-
-		int dx, dy;
-		const GameInfo& game_info = Observation()->GetGameInfo();
-
-		if (mypos.x > 100) {
-			//right side of map so need to take right edge
-			dx = game_info.width - mypos.x;
-		}
-		else {
-			dx = mypos.x;
-		}
-
-		if (mypos.y > 100) {
-			//top side of map so need to take top edge
-			dy= game_info.height - mypos.y;
-		}
-		else {
-			dy = mypos.y;
-		}
-		for (int x = -1; x < 2; ++x) {
-			for (int y = -1; y < 2; ++y) {
-				Point2D temp((mypos.x + (x*dx)), (mypos.y + (y*dy)));
-				allpatrols.push_back(temp);
-			}
-		}
 
 
-		/*
-		2 5 8
-		1 4 7
-		0 3 6
-		*/
-		if (selfcorner[0]) {
-			//we are at bottom left so need patrol points 2,5,6,7,8
-			patrolpoints.push_back(allpatrols[8]); //order matters a bit, but not that much, put in order of importance/impact
-			if (xadj) {
-				patrolpoints.push_back(allpatrols[5]);
-				patrolpoints.push_back(allpatrols[2]);
-			}
-			else if (yadj) {
-				patrolpoints.push_back(allpatrols[7]);
-				patrolpoints.push_back(allpatrols[6]);
-			}
-			else {
-				patrolpoints.push_back(allpatrols[5]);
-				patrolpoints.push_back(allpatrols[7]);
-			}
-		}else if (selfcorner[1]) {
-			//we are at top left so need patrol points 0,3,6,7,8
-			patrolpoints.push_back(allpatrols[6]); 
-			if (xadj) {
-				patrolpoints.push_back(allpatrols[3]);
-				patrolpoints.push_back(allpatrols[0]);
-			}
-			else if (yadj) {
-				patrolpoints.push_back(allpatrols[7]);
-				patrolpoints.push_back(allpatrols[8]);
-			}
-			else {
-				patrolpoints.push_back(allpatrols[3]);
-				patrolpoints.push_back(allpatrols[7]);
-			}
-		}else if(selfcorner[2]) {
-			//we are at top right so need patrol points 0,3,6,1,2
-			patrolpoints.push_back(allpatrols[0]);
-			if (xadj) {
-				patrolpoints.push_back(allpatrols[3]);
-				patrolpoints.push_back(allpatrols[6]);
-			}
-			else if (yadj) {
-				patrolpoints.push_back(allpatrols[2]);
-				patrolpoints.push_back(allpatrols[1]);
-			}
-			else {
-				patrolpoints.push_back(allpatrols[3]);
-				patrolpoints.push_back(allpatrols[1]);
-			}
-	
-		}else {
-			//we are at bottom right so need patrol points 0,1,2,5,8
-			patrolpoints.push_back(allpatrols[2]);
-			if (xadj) {
-				patrolpoints.push_back(allpatrols[5]);
-				patrolpoints.push_back(allpatrols[8]);
-			}
-			else if (yadj) {
-				patrolpoints.push_back(allpatrols[1]);
-				patrolpoints.push_back(allpatrols[0]);
-			}
-			else {
-				patrolpoints.push_back(allpatrols[5]);
-				patrolpoints.push_back(allpatrols[8]);
-			}
-		}
-		return;
-	}
+        
+    const Unit* FindNearestObject(const Point2D& start,UNIT_TYPEID type) {
+        Units units = Observation()->GetUnits(Unit::Alliance::Neutral);
+        float distance = std::numeric_limits<float>::max();
+        const Unit* target = nullptr;
+        for (const auto& u : units) {
+            if (u->unit_type == type) {
+                float d = DistanceSquared2D(u->pos, start);
+                if (d < distance) {
+                    distance = d;
+                    target = u;
+                }
+            }
+        }
+        return target;
+    }
+        
+    void BuildOrder(const Unit* unit){
+        const ObservationInterface* observation = Observation();
+        size_t mineral=observation->GetMinerals();
+        size_t vespene=observation->GetVespene();
+        size_t countMarine = CountUnitType(UNIT_TYPEID::TERRAN_MARINE);
+        size_t countreaper = CountUnitType(UNIT_TYPEID::TERRAN_REAPER);
+        size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB);
+        
+        /*if (countMarine > 10 && countreaper < 5){
+            Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_REAPER);
+        }
+        else if (counttech_lab >= 1){
+            Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARAUDER);
+        }
+        if (mineral > 50 && vespene >25){
+            Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
+        }*/
+        
+        Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+        
+            
+    }
+        
+    void TryFarmGas(){
+        Units Refinerys = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
+        
+        for ( const auto& refinery: Refinerys){
+            Units Workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
+            
+            if (refinery->assigned_harvesters < refinery->ideal_harvesters){
+                Actions()->UnitCommand(Workers.front(),ABILITY_ID::HARVEST_GATHER,refinery);
+                std::cout << "here" << std::endl;
+            }
+            
+        }
+        
+    }
+        
+ 
 
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
 	const Unit *scouter; //marine unit used for scouting earlygame
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
-	int patrolpos = 0;
-	std::vector<Point2D> patrolpoints;
-	std::clock_t start; 
-	bool allowPatrol = false;
+  bool haveTechLab = false;
+  bool haveReactor = false;
+
 };
 
 int main(int argc, char* argv[]) {
@@ -451,7 +461,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss)
+        CreateComputer(Race::Protoss, sc2::Medium)
 		});
 
 	coordinator.LaunchStarcraft();
