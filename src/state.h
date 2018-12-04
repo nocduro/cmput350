@@ -94,7 +94,9 @@ STATES
 */
 
 struct MainState : sc::simple_state<MainState, StateMachine, GameStart> {
-	MainState();
+	MainState() {
+		enemy_pos = -1;
+	}
 	// list of the type of events we can process in MainState
 	typedef mpl::list<
 		sc::custom_reaction<CommandCenterIdle>,
@@ -108,6 +110,7 @@ struct MainState : sc::simple_state<MainState, StateMachine, GameStart> {
 	sc::result react(const BarracksIdle& event);
 	sc::result react(const SCVIdle& event);
 	sc::result react(const MarineIdle& event);
+	size_t enemy_pos;
 };
 
 
@@ -144,9 +147,17 @@ struct GameStart_Refinery : sc::simple_state<GameStart_Refinery, GameStart> {
 struct GameStart_BuildArmy : sc::simple_state<GameStart_BuildArmy, GameStart> {
 	GameStart_BuildArmy() {
 		std::cout << "GameStart_BuildArmy state" << std::endl;
+		scouter = nullptr;
+		scouting = 0;
 	}
-	typedef sc::custom_reaction<StepEvent> reactions;
+	typedef mpl::list<
+		sc::custom_reaction<StepEvent>,
+		sc::custom_reaction<MarineIdle>
+	> reactions;
 	sc::result react(const StepEvent& event);
+	sc::result react(const MarineIdle& event);
+	const Unit* scouter;
+	size_t scouting;
 };
 
 struct GameStart_BuildBarracks : sc::simple_state<GameStart_BuildBarracks, GameStart> {

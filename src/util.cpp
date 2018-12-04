@@ -131,3 +131,20 @@ bool GetRandomUnit(const Unit*& unit_out, observation_t Observation, UnitTypeID 
 	}
 	return false;
 }
+
+bool GetRandomMineralSCV(const Unit*& unit_out, observation_t Observation) {
+	Units units = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
+
+	for (const Unit* unit : units) {
+		auto tag = unit->orders.front().target_unit_tag;
+		if (tag == NullTag) {
+			continue;
+		}
+		auto target = Observation()->GetUnit(tag);
+		if (target->mineral_contents > 0) {
+			unit_out = unit;
+			return true;
+		}
+	}
+	return false;
+}
