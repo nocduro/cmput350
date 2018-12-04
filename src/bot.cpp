@@ -36,7 +36,6 @@ public:
 		TryBuildSupplyDepot();
 		TryBuildBarracks();
         TryFarmGas();
-        //TryUpdgradeBarracks();
         TryBuildFactory();
         TryBuildStarport();
         
@@ -386,10 +385,10 @@ private:
 			// TryBuildStructure(ABILITY_ID::BUILD_BARRACKS);
         }
 
-        // if we have more than 1 barracks, don't build anymore
-		// if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) >= 1) {
-		// 	return false;
-		// }
+         //if we have more than 1 barracks, don't build anymore
+		 if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) >= 1) {
+		 	return false;
+		 }
 
 		return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
 		// return false;
