@@ -73,9 +73,11 @@ public:
                 Units Refinerys = Observation()->GetUnits(Unit::Alliance::Neutral, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
 
 				// if scv is idle and supply is equal to 19, build a second command center
-				// if (observation->GetFoodUsed() >= 19) {
-				// 	Actions()->UnitCommand(unit, ABILITY_ID::BUILD_COMMANDCENTER, mineral_target);
-				// }
+				if (observation->GetFoodUsed() >= 19) {
+					std::cout << mineralpatches[0]->pos.x << ", " << mineralpatches[0]->pos.y << std::endl;
+					std::cout << mineralpatches[1]->pos.x << ", " << mineralpatches[1]->pos.y << std::endl;
+					TryBuildSecondCC();
+				}
 
     			if (!mineral_target) {
                     // TryBuildRefinery();
@@ -300,7 +302,13 @@ private:
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
-        } else {
+        } else if (ability_type_for_structure == ABILITY_ID::BUILD_COMMANDCENTER) {
+			std::cout << "Trying to build CC" << std::endl;
+			// Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base locatio
+			Actions()->UnitCommand(unit_to_build,
+			ability_type_for_structure,
+			Point2D(mineralpatches[1]->pos.x + rx * 5.0f, mineralpatches[1]->pos.y + ry * 5.0f));
+		} else {
 		  	Actions()->UnitCommand(unit_to_build,
 			ability_type_for_structure,
 			Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
@@ -428,6 +436,16 @@ private:
             
         return TryBuildStructure(ABILITY_ID::BUILD_FACTORY); // conditions were passed and we delegate to TryBuildStructure()
     }
+
+	bool TryBuildSecondCC() {
+		const ObservationInterface* observation = Observation();
+
+		if (CountUnitType(UNIT_TYPEID::TERRAN_COMMANDCENTER) >= 2) {
+			return false;
+		}
+
+		return TryBuildStructure(ABILITY_ID::BUILD_COMMANDCENTER);
+	}
 
 	bool TryBuildEngBay() {
 		const ObservationInterface* observation = Observation();
