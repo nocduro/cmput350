@@ -23,9 +23,13 @@ class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
 		std::cout << "Can I get a pogchamp in the chat?" << std::endl;
+		assignScout();
 	}
 
 	virtual void OnStep() final {
+		if (enemypos < 0) {
+			scout();
+		}
 		TryBuildSupplyDepot();
 		TryBuildBarracks();
 
@@ -167,6 +171,30 @@ public:
 		}
 	}
 private:
+	void assignScout() {
+		Units SCVs = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
+		if (scouter == NULL) {
+			scouter = SCVs.front();
+			std::cout << "scout assigned" << std::endl;
+		}
+	}
+
+	void scout() {
+		const GameInfo& game_info = Observation()->GetGameInfo();
+		if (enemypos < 0) { //check if we already found enemy base
+			// start scouting
+			if (scouter->is_alive && scouting < 3) {
+				Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
+				if (Point2D(scouter->pos) == game_info.enemy_start_locations[scouting]) {
+					++scouting; //move to next target next time
+				}
+			}
+			else if (!scouter->is_alive) {
+				enemypos = scouting;
+				std::cout << "enemy at pos " << enemypos << std::endl;
+			}
+		}
+	}
 	//attacks early game with marinecount marines to nearest enemy
 	void earlyrush(size_t marinecount) {
 		const GameInfo& game_info = Observation()->GetGameInfo();
@@ -441,7 +469,7 @@ private:
 
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
-	const Unit *scouter; //marine unit used for scouting earlygame
+	const Unit *scouter = NULL; //marine unit used for scouting earlygame
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
   bool haveTechLab = false;
