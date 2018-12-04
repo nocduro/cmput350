@@ -592,23 +592,23 @@ private:
             
     }
         
-    void TryFarmGas(){
-		const ObservationInterface* observation = Observation();
-		Units SCVs = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
-        Units Refinerys = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
-		
-		
+	void TryFarmGas(){
+        Units Refinerys = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
+        
         for ( const auto& refinery: Refinerys){
-            while (refinery->assigned_harvesters < refinery->ideal_harvesters){
-				 if (scouter != SCVs.front()) {
-					Actions()->UnitCommand(SCVs.front(), ABILITY_ID::HARVEST_GATHER, refinery);
-				 }
-				 SCVs.erase(SCVs.begin());
+            Units Workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
+            
+            if (refinery->assigned_harvesters < refinery->ideal_harvesters){
+				if (scouter != Workers.front()) {
+					Actions()->UnitCommand(Workers.front(), ABILITY_ID::HARVEST_GATHER, refinery);
+				}
+                
+                //std::cout << "here" << std::endl;
             }
+            
         }
-    }
-
-
+        
+	}
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
 	const Unit *scouter = NULL; //marine unit used for scouting earlygame
