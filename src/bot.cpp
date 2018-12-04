@@ -244,7 +244,7 @@ private:
 					else if (Distance2D(mineralpatches[4]->pos, playerpos) > 10) {
 						mineralindex = 4;
 					}
-					Actions()->UnitCommand(scouter, ABILITY_ID::MOVE, mineralpatches[mineralindex]->pos);
+					
 				}
 			}
 			else if (!scouter->is_alive) {
