@@ -30,10 +30,13 @@ public:
 		// called every step
 		TryBuildSupplyDepot();
 		TryBuildBarracks();
-		TryBuildRefinery();
+		// TryBuildRefinery();
         TryFarmGas();
         //TryUpdgradeBarracks();
         TryBuildFactory();
+        TryBuildStarport();
+        
+        
 	}
 
 	virtual void OnUnitIdle(const Unit* unit) final {
@@ -66,10 +69,10 @@ public:
                 const Unit* refinery_target = FindNearestObject(unit->pos,UNIT_TYPEID::TERRAN_REFINERY);
                 Units Refinerys = Observation()->GetUnits(Unit::Alliance::Neutral, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
 
-				// if scv is idle and supply is equal to 19, build a second command center
-				if (observation->GetFoodUsed() >= 19) {
-					Actions()->UnitCommand(unit, ABILITY_ID::BUILD_COMMANDCENTER, mineral_target);
-				}
+				// // if scv is idle and supply is equal to 19, build a second command center
+				// if (observation->GetFoodUsed() >= 19) {
+				// 	Actions()->UnitCommand(unit, ABILITY_ID::BUILD_COMMANDCENTER, mineral_target);
+				// }
 
     			if (!mineral_target) {
                     // TryBuildRefinery();
@@ -115,8 +118,21 @@ public:
                     }
                 } else {
                     //BuildOrder(unit);
+				}
+                size_t countReactor = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKSREACTOR);
+                if (countReactor < 1 && !haveReactor){
+                  
+                    Actions()->UnitCommand(unit, ABILITY_ID::BUILD_REACTOR);
+                    
+                    if (countReactor >=1){
+                        haveReactor = true;
+                    }
+                }else{
+                    //Train 2 marines at once
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
                 }
-    			//Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+    			
     			break;
     		}
     		case UNIT_TYPEID::TERRAN_MARINE: {
@@ -129,6 +145,7 @@ public:
     			Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
     			if (enemypos<0) { //check if we already found enemy base
     				// start scouting
+                    /*
 					if (unit == scouter && scouter->health > 0) {
 						std::cout << "scouter still alive" << std::endl;
 						Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
@@ -137,7 +154,7 @@ public:
 					else if(!scouter->is_alive){
 						enemypos = scouting-1;
 						std::cout << "enemy at pos " << enemypos << std::endl;
-					}
+					}*/
     			}
     			//small early game rush attempt
     			if (marinecount > 12 && !earlyAttacked && enemypos>=0) { //check if we have enough marines
@@ -147,6 +164,27 @@ public:
 
     			break;
     		}
+            case UNIT_TYPEID::TERRAN_STARPORT: {
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MEDIVAC);
+                break;
+            }
+            case UNIT_TYPEID::TERRAN_FACTORY:{
+                size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+                //Units tech_lab = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_TECHLAB));
+                if (counttech_lab < 1 && !haveTechLab){
+                    std::cout << "here" << std::endl;
+                    Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
+                    std::cout << "here2" << std::endl;
+                    if (counttech_lab >=1){
+                        haveTechLab = true;
+                        std::cout << "here3" << std::endl;
+                        
+                    }
+                }else{
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SIEGETANK);
+                    std::cout << "here4" << std::endl;
+                }
+            }
     		default: {
     			break;
     		}
@@ -264,9 +302,8 @@ private:
         }
 
 		// If we are not supply capped, don't build a supply depot.
-		if (observation->GetFoodUsed() <= observation->GetFoodCap() - 2) {
+		if (observation->GetFoodUsed() <= observation->GetFoodCap() - 15)
 			return false;
-		}
 
         // std::cout << observation->GetFoodUsed() << " " << observation->GetFoodCap() << std::endl;
 
@@ -331,8 +368,7 @@ private:
 		return false;
 	}
         
-        
-    bool TryUpdgradeBarracks() {
+    bool TryBuildStarport() {
         const ObservationInterface* observation = Observation();
             
             // can't build barracks without at least one supply depot
@@ -342,16 +378,18 @@ private:
             
             // build first barracks only when supply is at 16
         if (observation->GetFoodUsed() == 16) {
-                // std::cout << "BUILD BARRACKS" << std::endl;
+            // std::cout << "BUILD BARRACKS" << std::endl;
         }
             
             // if we have more than 1 barracks, don't build anymore
-        if (CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB) > 1) {
+        if (CountUnitType(UNIT_TYPEID::TERRAN_STARPORT) >= 1) {
             return false;
         }
-            
-        return TryBuildStructure(ABILITY_ID::BUILD_TECHLAB_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
+        
+        return TryBuildStructure(ABILITY_ID::BUILD_STARPORT); // conditions were passed and we delegate to TryBuildStructure()
     }
+        
+        
         
         
     bool TryBuildFactory() {
@@ -368,12 +406,14 @@ private:
         }
             
             // if we have more than 1 barracks, don't build anymore
-        if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) > 1) {
+        if (CountUnitType(UNIT_TYPEID::TERRAN_FACTORY) >= 1) {
             return false;
         }
             
         return TryBuildStructure(ABILITY_ID::BUILD_FACTORY); // conditions were passed and we delegate to TryBuildStructure()
     }
+        
+        
 
         
         
@@ -486,6 +526,7 @@ private:
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
     bool haveTechLab = false;
+    bool haveReactor = false;
 };
 
 int main(int argc, char* argv[]) {
@@ -495,7 +536,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss)
+        CreateComputer(Race::Protoss, sc2::Medium)
 		});
 
 	coordinator.LaunchStarcraft();
