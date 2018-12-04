@@ -329,22 +329,21 @@ private:
 		if (playerpos.x < 100) {
 			//left side, so want positive rx
 			rx = GetRandomFraction();
-			dx = 3.0f;
+			dx = 0.5f;
 		}
 		else {
 			rx = -1 * GetRandomFraction();
-			dx = -3.0f;
+			dx = -0.5f;
 
 		}
-
 		if (playerpos.y< 100) {
 			//bottom, so want positive rx
 			ry = GetRandomFraction();
-			dy = 3.0f;
+			dy = 0.5f;
 		}
 		else {
 			ry = -1 * GetRandomFraction();
-			dy = -3.0f;
+			dy = -0.5f;
 		}
 		if (depth > 15.0f) {
 			depth = 1.0f;
@@ -352,25 +351,18 @@ private:
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
-            /*
-            if (commandcenter.size() >0){
-                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(commandcenter.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
-            }
-            else if (orbitalcommand.size() >0){
-                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(orbitalcommand.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
-            }*/
         } else {
             if (commandcenter.size() >0){
                 Actions()->UnitCommand(unit_to_build,
                                        ability_type_for_structure,
                                        Point2D(commandcenter.front()->pos.x + (rx * depth)+dx, commandcenter.front()->pos.y + (ry * depth)+dy));
-                depth += 0.01f;
+                depth += 0.05f;
             }
             else if (orbitalcommand.size() >0){
                 Actions()->UnitCommand(unit_to_build,
                                        ability_type_for_structure,
                                        Point2D(orbitalcommand.front()->pos.x + (rx * depth)+dx, orbitalcommand.front()->pos.y + (ry * depth)+dy));
-                depth += 0.01f;
+                depth += 0.05f;
             }
         }
 
@@ -577,21 +569,21 @@ private:
     }
         
     void TryFarmGas(){
-        Units Refinerys = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
-        
+		const ObservationInterface* observation = Observation();
+		Units SCVs = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
+        Units Refinerys = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
+		
+		
         for ( const auto& refinery: Refinerys){
-            Units Workers = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
-            
-            if (refinery->assigned_harvesters < refinery->ideal_harvesters){
-                Actions()->UnitCommand(Workers.front(),ABILITY_ID::HARVEST_GATHER,refinery);
-                //std::cout << "here" << std::endl;
+            while (refinery->assigned_harvesters < refinery->ideal_harvesters){
+				 if (scouter != SCVs.front()) {
+					Actions()->UnitCommand(SCVs.front(), ABILITY_ID::HARVEST_GATHER, refinery);
+				 }
+				 SCVs.erase(SCVs.begin());
             }
-            
         }
-        
     }
-        
- 
+
 
 	int scouting = 0; //used for scouting all enemy bases
 	bool earlyAttacked = 0; //used as a flag to see if we have early rushed or not
