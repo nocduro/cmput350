@@ -131,11 +131,7 @@ public:
 					}*/
 
     			}
-				if (earlyAttacked && allowPatrol) {
-					Actions()->UnitCommand(unit, ABILITY_ID::ATTACK_ATTACK, patrolpoints[patrolpos]); //go to patrol point
-					patrolpos++;
-					patrolpos = patrolpos % 3;
-				}
+				
     			//small early game rush attempt
 				if (marinecount > 12 && !earlyAttacked && enemypos >= 0) { //check if we have enough marines
 					earlyAttacked = 1; //dont do it again
@@ -173,7 +169,6 @@ public:
 private:
 	//attacks early game with marinecount marines to nearest enemy
 	void earlyrush(size_t marinecount) {
-		start = std::clock();
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
 			
