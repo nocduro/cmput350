@@ -84,11 +84,11 @@ public:
                 Units Refinerys = Observation()->GetUnits(Unit::Alliance::Neutral, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
 
 				// if scv is idle and supply is equal to 19, build a second command center
-				if (observation->GetFoodUsed() >= 19) {
-					std::cout << mineralpatches[0]->pos.x << ", " << mineralpatches[0]->pos.y << std::endl;
-					std::cout << mineralpatches[1]->pos.x << ", " << mineralpatches[1]->pos.y << std::endl;
-					TryBuildSecondCC();
-				}
+				// if (observation->GetFoodUsed() >= 19) {
+				// 	std::cout << mineralpatches[0]->pos.x << ", " << mineralpatches[0]->pos.y << std::endl;
+				// 	std::cout << mineralpatches[1]->pos.x << ", " << mineralpatches[1]->pos.y << std::endl;
+				// 	TryBuildSecondCC();
+				// }
 
     			if (!mineral_target) {
                     // TryBuildRefinery();
@@ -347,23 +347,23 @@ private:
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
 
-        } else if (ability_type_for_structure == ABILITY_ID::BUILD_COMMANDCENTER) {
-			std::cout << "Trying to build CC" << std::endl;
-			// Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base locatio
-			Actions()->UnitCommand(unit_to_build,
-			ability_type_for_structure,
-			Point2D(mineralpatches[mineralindex]->pos.x + rx * 7.0f, mineralpatches[mineralindex]->pos.y + ry * 7.0f));
-		// } else {
-		//   	Actions()->UnitCommand(unit_to_build,
+        // } else if (ability_type_for_structure == ABILITY_ID::BUILD_COMMANDCENTER) {
+		// 	std::cout << "Trying to build CC" << std::endl;
+		// 	// Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base locatio
+		// 	Actions()->UnitCommand(unit_to_build,
 		// 	ability_type_for_structure,
-		// 	Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
-            /*
-            if (commandcenter.size() >0){
-                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(commandcenter.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
-            }
-            else if (orbitalcommand.size() >0){
-                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(orbitalcommand.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
-            }*/
+		// 	Point2D(mineralpatches[mineralindex]->pos.x + rx * 7.0f, mineralpatches[mineralindex]->pos.y + ry * 7.0f));
+		// // } else {
+		// //   	Actions()->UnitCommand(unit_to_build,
+		// // 	ability_type_for_structure,
+		// // 	Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+        //     /*
+        //     if (commandcenter.size() >0){
+        //         Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(commandcenter.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+        //     }
+        //     else if (orbitalcommand.size() >0){
+        //         Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(orbitalcommand.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+        //     }*/
 
         } else {
             if (commandcenter.size() >0){
