@@ -142,25 +142,7 @@ public:
 				Actions()->UnitCommand(unit, ABILITY_ID::HOLDPOSITION, unit->pos);
 				const GameInfo& game_info = Observation()->GetGameInfo();
 				size_t marinecount = CountUnitType(UNIT_TYPEID::TERRAN_MARINE); // get number of marines
-				
-				if (marinecount==1 && !earlyAttacked) {
-					scouter = unit; 
-				}
-    			
-    			if (enemypos<0) { //check if we already found enemy base
-    				// start scouting
-                    /*
-					if (unit == scouter && scouter->health > 0) {
-						std::cout << "scouter still alive" << std::endl;
-						Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base location
-						++scouting; //move to next target next time
-					}
-					else if(!scouter->is_alive){
-						enemypos = scouting-1;
-						std::cout << "enemy at pos " << enemypos << std::endl;
-					}*/
-
-    			}
+			  			
 				
     			//small early game rush attempt
 				if (marinecount > 12 && !earlyAttacked && enemypos >= 0) { //check if we have enough marines
@@ -177,17 +159,17 @@ public:
                 size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
                 //Units tech_lab = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_TECHLAB));
                 if (counttech_lab < 1 && !haveTechLab){
-                    std::cout << "here" << std::endl;
+                    //std::cout << "here" << std::endl;
                     Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
-                    std::cout << "here2" << std::endl;
+                    //std::cout << "here2" << std::endl;
                     if (counttech_lab >=1){
                         haveTechLab = true;
-                        std::cout << "here3" << std::endl;
+                        //std::cout << "here3" << std::endl;
                         
                     }
                 }else{
                     Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SIEGETANK);
-                    std::cout << "here4" << std::endl;
+                    //std::cout << "here4" << std::endl;
                 }
             }
     		default: {
@@ -238,6 +220,18 @@ private:
 				if (Point2D(scouter->pos) == game_info.enemy_start_locations[scouting]) {
 					++scouting; //move to next target next time
 				}
+				if (mineralpatches.size() <2) {
+					const Unit* target = FindNearestMineralPatch(scouter->pos);
+					if (target != nullptr) {
+						if (std::find(mineralpatches.begin(), mineralpatches.end(), target) != mineralpatches.end()) {
+							/* v contains x */
+						}
+						else {
+							mineralpatches.push_back(target);
+							std::cout << target->pos.x << " " << target->pos.y << std::endl;
+						}
+					}
+				}
 			}
 			else if (!scouter->is_alive) {
 				enemypos = scouting;
@@ -249,7 +243,6 @@ private:
 	void earlyrush(size_t marinecount) {
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		sc2::Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE)); //get our marine units
-			
 		for (size_t i = 0; i < marinecount; i++) //iterate through our marines
 		{
 			Actions()->UnitCommand(marines[i], ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); //attack selected target
@@ -453,14 +446,6 @@ private:
         
         
 
-        
-        
-        
-        
-        
-        
-        
-
 	sc2::Point2D getPlayerPos(std::vector<sc2::Point2D> enemylocations) {
 		//Starting positions within the map
 		std::vector<sc2::Point2D> startlocations; 
@@ -531,7 +516,7 @@ private:
             
             if (refinery->assigned_harvesters < refinery->ideal_harvesters){
                 Actions()->UnitCommand(Workers.front(),ABILITY_ID::HARVEST_GATHER,refinery);
-                std::cout << "here" << std::endl;
+                //std::cout << "here" << std::endl;
             }
             
         }
@@ -545,9 +530,9 @@ private:
 	const Unit *scouter = NULL; //marine unit used for scouting earlygame
 	int enemypos = -1; //index for enemy position
 	sc2::Point2D playerpos;
-  bool haveTechLab = false;
-  bool haveReactor = false;
-
+	bool haveTechLab = false;
+	bool haveReactor = false;
+	std::vector<const Unit*> mineralpatches;
 };
 
 int main(int argc, char* argv[]) {
