@@ -64,6 +64,16 @@ public:
 
     			break;
     		}
+            case UNIT_TYPEID::TERRAN_ORBITALCOMMAND: {
+                size_t scvCount = CountUnitType(UNIT_TYPEID::TERRAN_SCV);
+                
+                if (scvCount <= 30){
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_SCV);
+                }
+                
+                break;
+            }
+                
 			
             // if scv is idle, make it do something productive
     		case UNIT_TYPEID::TERRAN_SCV: {
@@ -74,9 +84,11 @@ public:
                 Units Refinerys = Observation()->GetUnits(Unit::Alliance::Neutral, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
 
 				// if scv is idle and supply is equal to 19, build a second command center
-				// if (observation->GetFoodUsed() >= 19) {
-				// 	Actions()->UnitCommand(unit, ABILITY_ID::BUILD_COMMANDCENTER, mineral_target);
-				// }
+				if (observation->GetFoodUsed() >= 19) {
+					std::cout << mineralpatches[0]->pos.x << ", " << mineralpatches[0]->pos.y << std::endl;
+					std::cout << mineralpatches[1]->pos.x << ", " << mineralpatches[1]->pos.y << std::endl;
+					TryBuildSecondCC();
+				}
 
     			if (!mineral_target) {
                     // TryBuildRefinery();
@@ -91,16 +103,7 @@ public:
     			if (gas_target){
                     TryBuildRefinery();
 				}
-                
-                /*if (Refinerys.size() > 0){
-                    for ( const auto& refinery: Refinerys){
-                        if (refinery->assigned_harvesters < refinery->ideal_harvesters){
-                            Actions()->UnitCommand(unit,ABILITY_ID::HARVEST_GATHER,refinery);
-                            std::cout << "here" << std::endl;
-                        }
-                    }
-                }*/
-                
+            
     			else {
                     if (countSCV < 14){
                         Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);// send idle worker to mineral patch
@@ -112,17 +115,6 @@ public:
     			}
     		}
     		case UNIT_TYPEID::TERRAN_BARRACKS: {
-                // size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB);
-                // if (counttech_lab < 1 && !haveTechLab){
-                //     std::cout << "Build TechLab" << std::endl;
-                //     Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
-                //     // std::cout << "here2" << std::endl;
-                //     if (counttech_lab >=1){
-                //         haveTechLab = true;
-                //     }
-                // } else {
-                //     //BuildOrder(unit);
-				// }
                 size_t countReactor = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKSREACTOR);
                 if (countReactor < 1 && !haveReactor){
                   
@@ -153,7 +145,10 @@ public:
     			break;
     		}
             case UNIT_TYPEID::TERRAN_STARPORT: {
-                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_VIKINGFIGHTER);
+                size_t countanks = CountUnitType(UNIT_TYPEID::TERRAN_SIEGETANK);
+                if (countanks >= 2){
+                    Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_VIKINGFIGHTER);
+                }
                 break;
             }
             case UNIT_TYPEID::TERRAN_FACTORY:{
@@ -351,6 +346,25 @@ private:
 		// if the structure type we want to build is a refinery, find nearest geyser and build
         if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+
+        } else if (ability_type_for_structure == ABILITY_ID::BUILD_COMMANDCENTER) {
+			std::cout << "Trying to build CC" << std::endl;
+			// Actions()->UnitCommand(scouter, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[scouting]); //move marine to enemy base locatio
+			Actions()->UnitCommand(unit_to_build,
+			ability_type_for_structure,
+			Point2D(mineralpatches[mineralindex]->pos.x + rx * 7.0f, mineralpatches[mineralindex]->pos.y + ry * 7.0f));
+		// } else {
+		//   	Actions()->UnitCommand(unit_to_build,
+		// 	ability_type_for_structure,
+		// 	Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+            /*
+            if (commandcenter.size() >0){
+                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(commandcenter.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+            }
+            else if (orbitalcommand.size() >0){
+                Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(orbitalcommand.front()->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
+            }*/
+
         } else {
             if (commandcenter.size() >0){
                 Actions()->UnitCommand(unit_to_build,
@@ -489,6 +503,16 @@ private:
         return TryBuildStructure(ABILITY_ID::BUILD_FACTORY); // conditions were passed and we delegate to TryBuildStructure()
     }
 
+	bool TryBuildSecondCC() {
+		const ObservationInterface* observation = Observation();
+
+		if (CountUnitType(UNIT_TYPEID::TERRAN_COMMANDCENTER) >= 2) {
+			return false;
+		}
+
+		return TryBuildStructure(ABILITY_ID::BUILD_COMMANDCENTER);
+	}
+
 	bool TryBuildEngBay() {
 		const ObservationInterface* observation = Observation();
             
@@ -604,7 +628,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-        CreateComputer(Race::Protoss, sc2::Medium)
+        CreateComputer(Race::Protoss, sc2::MediumHard)
 		});
 
 	coordinator.LaunchStarcraft();
