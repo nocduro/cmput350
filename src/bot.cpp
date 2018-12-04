@@ -69,7 +69,7 @@ public:
                 const Unit* refinery_target = FindNearestObject(unit->pos,UNIT_TYPEID::TERRAN_REFINERY);
                 Units Refinerys = Observation()->GetUnits(Unit::Alliance::Neutral, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
 
-				// // if scv is idle and supply is equal to 19, build a second command center
+				// if scv is idle and supply is equal to 19, build a second command center
 				// if (observation->GetFoodUsed() >= 19) {
 				// 	Actions()->UnitCommand(unit, ABILITY_ID::BUILD_COMMANDCENTER, mineral_target);
 				// }
@@ -108,17 +108,17 @@ public:
     			}
     		}
     		case UNIT_TYPEID::TERRAN_BARRACKS: {
-                size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB);
-                if (counttech_lab < 1 && !haveTechLab){
-                    std::cout << "Build TechLab" << std::endl;
-                    Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
-                    // std::cout << "here2" << std::endl;
-                    if (counttech_lab >=1){
-                        haveTechLab = true;
-                    }
-                } else {
-                    //BuildOrder(unit);
-				}
+                // size_t counttech_lab = CountUnitType(UNIT_TYPEID::TERRAN_TECHLAB);
+                // if (counttech_lab < 1 && !haveTechLab){
+                //     std::cout << "Build TechLab" << std::endl;
+                //     Actions()->UnitCommand(unit, ABILITY_ID::BUILD_TECHLAB);
+                //     // std::cout << "here2" << std::endl;
+                //     if (counttech_lab >=1){
+                //         haveTechLab = true;
+                //     }
+                // } else {
+                //     //BuildOrder(unit);
+				// }
                 size_t countReactor = CountUnitType(UNIT_TYPEID::TERRAN_BARRACKSREACTOR);
                 if (countReactor < 1 && !haveReactor){
                   
@@ -308,22 +308,22 @@ private:
         // std::cout << observation->GetFoodUsed() << " " << observation->GetFoodCap() << std::endl;
 
 		// Try and build a depot. Find a random SCV and give it the order.
-		// return TryBuildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT);
-		return false;
+		return TryBuildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT);
+		// return false;
 	}
 
     // attempts to build a refinery on gas patch
     bool TryBuildRefinery() {
         const ObservationInterface* observation = Observation();
 
-        if (observation->GetFoodUsed() == 15) {
+        if (observation->GetFoodUsed() == 14 || observation->GetFoodUsed() == 16) {
             std::cout << "BUILT REFINERY" << std::endl;
 			std::cout << observation->GetFoodUsed() << std::endl;
             return TryBuildStructure(ABILITY_ID::BUILD_REFINERY);
         }
 
-        // return TryBuildStructure(ABILITY_ID::BUILD_REFINERY);
-		return false;
+        return TryBuildStructure(ABILITY_ID::BUILD_REFINERY);
+		// return false;
     }
 	
     // finds the nearest mineral patch to our current base
@@ -354,9 +354,9 @@ private:
 
         // build first barracks when supply is at 16
         if (observation->GetFoodUsed() == 16) {
-            std::cout << "BUILD BARRACKS" << std::endl;
-			std::cout << observation->GetFoodUsed() << std::endl;
-			TryBuildStructure(ABILITY_ID::BUILD_BARRACKS);
+            // std::cout << "BUILD BARRACKS" << std::endl;
+			// std::cout << observation->GetFoodUsed() << std::endl;
+			// TryBuildStructure(ABILITY_ID::BUILD_BARRACKS);
         }
 
         // if we have more than 1 barracks, don't build anymore
@@ -364,8 +364,8 @@ private:
 		// 	return false;
 		// }
 
-		// return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
-		return false;
+		return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS); // conditions were passed and we delegate to TryBuildStructure()
+		// return false;
 	}
         
     bool TryBuildStarport() {
@@ -389,9 +389,6 @@ private:
         return TryBuildStructure(ABILITY_ID::BUILD_STARPORT); // conditions were passed and we delegate to TryBuildStructure()
     }
         
-        
-        
-        
     bool TryBuildFactory() {
         const ObservationInterface* observation = Observation();
             
@@ -412,6 +409,21 @@ private:
             
         return TryBuildStructure(ABILITY_ID::BUILD_FACTORY); // conditions were passed and we delegate to TryBuildStructure()
     }
+
+	bool TryBuildEngBay() {
+		const ObservationInterface* observation = Observation();
+            
+        if (observation->GetFoodUsed() == 16) {
+        }
+            
+            // if we already have 1  or more engineering bay, don't build anymore
+        if (CountUnitType(UNIT_TYPEID::TERRAN_ENGINEERINGBAY) >= 1) {
+            return false;
+        }
+            
+        return TryBuildStructure(ABILITY_ID::BUILD_ENGINEERINGBAY); // conditions were passed and we delegate to TryBuildStructure()
+
+	}
         
         
 
