@@ -62,7 +62,9 @@ public:
 		sm.process_event(UnitCreated(unit));
 	}
 	virtual void OnUpgradeComplete(UpgradeID) {}
-	virtual void OnBuildingConstructionComplete(const Unit* unit) {}
+	virtual void OnBuildingConstructionComplete(const Unit* unit) {
+		sm.process_event(BuildingConstructed(unit));
+	}
 	virtual void OnNydusDetected() {}
 	virtual void OnNuclearLaunchDetected() {}
 	virtual void OnUnitEnterVision(const Unit* unit) {}

@@ -15,15 +15,12 @@ sc::result GameStart_Refinery::react(const StepEvent& event) {
 
     Units Refinerys = observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_REFINERY));
 
-	if (Refinerys.empty()) {
+	if (Refinerys.size() < 2) {
 		return discard_event();
 	}
 
 	for (const auto& refinery : Refinerys) {
 		if (refinery->build_progress < 1.0) {
-			return discard_event();
-		}
-		if (refinery->assigned_harvesters != refinery->ideal_harvesters) {
 			return discard_event();
 		}
 	}
@@ -32,17 +29,18 @@ sc::result GameStart_Refinery::react(const StepEvent& event) {
 	return transit<EarlyRushState>();
 }
 
-sc::result GameStart_Refinery::react(const UnitCreated& event) {
+sc::result GameStart_Refinery::react(const BuildingConstructed& event) {
 	auto actions = context<StateMachine>().Actions;
 	auto observation = context<StateMachine>().Observation;
-	std::cout << "unit built!" << std::endl;
+	std::cout << "building built!" << std::endl;
 	// if refinery add workers
 	if (event.unit->unit_type == UNIT_TYPEID::TERRAN_REFINERY) {
+		std::cout << "refinery building built" << std::endl;
 		Units Workers = observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
-		for (size_t i = 0; i < 2; ++i) {
+		for (size_t i = 0; i < 3; ++i) {
 			actions()->UnitCommand(Workers[workers_offset + i], ABILITY_ID::HARVEST_GATHER, event.unit);
 		}
-		workers_offset += 7;
+		workers_offset += 3;
 	}
 
 	return discard_event();

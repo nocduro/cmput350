@@ -83,6 +83,10 @@ struct UnitCreated : sc::event<UnitCreated> {
 	const Unit* unit;
 	UnitCreated(const Unit* u) : unit(u) {}
 };
+struct BuildingConstructed : sc::event<BuildingConstructed> {
+	const Unit* unit;
+	BuildingConstructed(const Unit* u) : unit(u) {}
+};
 
 
 /*
@@ -130,10 +134,10 @@ struct GameStart_Refinery : sc::simple_state<GameStart_Refinery, GameStart> {
 	}
 	typedef mpl::list<
 		sc::custom_reaction<StepEvent>,
-		sc::custom_reaction<UnitCreated>
+		sc::custom_reaction<BuildingConstructed>
 	> reactions;
 	sc::result react(const StepEvent& event);
-	sc::result react(const UnitCreated& event);
+	sc::result react(const BuildingConstructed& event);
 	size_t workers_offset;
 };
 
