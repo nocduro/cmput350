@@ -628,7 +628,8 @@ private:
 int main(int argc, char* argv[]) {
 	Coordinator coordinator;
 	coordinator.LoadSettings(argc, argv);
-	coordinator.SetStepSize(10);
+	coordinator.SetStepSize(1);
+	// coordinator.se
 
 	Bot bot;
 	coordinator.SetParticipants({
