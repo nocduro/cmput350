@@ -7,13 +7,14 @@ using namespace sc2;
 class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
-		std::cout << "Can I get a pogchamp in the chat?" << std::endl;
 		assignScout();
 		assignBase();
 	}
 
 	virtual void OnStep() final {
+
 		updateSupplies();
+		// std::cout << supplies << std::endl;
 		if (enemypos < 0) {
 			scout();
 		}
