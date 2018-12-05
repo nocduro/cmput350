@@ -124,6 +124,7 @@ public:
 			makeMarine = true;
 			++stage;
 		case 7:
+			rush();
 			break;
 		}
 		//supplies now has our current supplies
@@ -165,6 +166,18 @@ public:
 		}
 	}
 private:
+	void rush() {
+		const GameInfo& game_info = Observation()->GetGameInfo();
+		Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+		if (marines.size() < 14) {
+			return;
+		}
+		//more than 14 marines, lets attack.
+
+		//lower a depo to form a path
+		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+		Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+	}
 	void checkVision() {
 		enemynear = false;
 		Units units = Observation()->GetUnits(Unit::Alliance::Enemy);//get enemy units
@@ -172,13 +185,18 @@ private:
 		Units depotR = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
 		Units depotL = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED));
 		for (const auto& unit : units) {
-			if (Distance2D(base->pos, unit->pos) < 20) {
+			if (Distance2D(base->pos, unit->pos) < 30) {
 				enemynear = true;
 				break;
 			}
 		}
 		if (enemynear) {
-			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, units.front());
+			for (const auto& unit : units) {
+				if (Distance2D(base->pos, unit->pos) < 30) {
+					Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, unit);
+					break;
+				}
+			}
 			Actions()->UnitCommand(depotL, ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
 		}
 		
