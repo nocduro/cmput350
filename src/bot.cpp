@@ -265,26 +265,7 @@ private:
             }
         }
 	}
-	//find nearest enemy will return index of the nearest enemy base using x,y
-	int FindNearestEnemy(const GameInfo& game_info, sc2::Units barracks) {
-		int min = 0;
-		int startx = barracks[0]->pos.x; //get the position of our barracks
-		int starty = barracks[0]->pos.y;
-		float smallest = Distance(startx, starty, game_info.enemy_start_locations[0].x, game_info.enemy_start_locations[0].y);
-		
-		for (size_t i = 1; i < game_info.enemy_start_locations.size(); i++) //iterate through enemy bases
-		{
-			if (Distance(startx,starty, game_info.enemy_start_locations[i].x, game_info.enemy_start_locations[i].y) < smallest) //if next enemy is closer
-			{
-				min = i; //set min to new min
-			}
-		}
-		return min; //return index
-	}
-	//helper function to get distance between two points
-	float Distance(int x1, int y1, int x2, int y2) {
-		return sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
-	}
+
 
 	// returns the number of a given unit type
 	size_t CountUnitType(UNIT_TYPEID unit_type) {
