@@ -84,10 +84,6 @@ public:
 		}
 
 		//supplies now has our current supplies
-
-
-
-	
 	}
 
 	virtual void OnUnitIdle(const Unit* unit) final {
@@ -180,7 +176,7 @@ private:
 				}
 			}
 
-			if (unit->unit_type == unit_type) {
+			if (unit->unit_type == unit_type && unit != scouter) {
 				unit_to_build = unit;
 			}
 		}
@@ -402,7 +398,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Zerg)
+		CreateComputer(Race::Protoss)
 	});
 
 	coordinator.SetWindowSize(2000,1500);
