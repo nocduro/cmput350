@@ -88,6 +88,7 @@ public:
 				}
 			}
 			if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 2) {
+				// Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
 				std::cout << "second depot was built, move to stage 5" << std::endl;
 				buildDepot = true;
 				++stage;
@@ -399,6 +400,7 @@ private:
 				ABILITY_ID::BUILD_SUPPLYDEPOT,
 				buildPoint);
 	}
+
     void BuildBarracksAfter(const Unit* unit_to_build,size_t Barrack ) {
         const ObservationInterface* observation = Observation();
         const Point2D startLocation = observation->GetStartLocation();
@@ -504,8 +506,15 @@ private:
             Actions()->UnitCommand(unit_to_build,
                                     ABILITY_ID::BUILD_BARRACKS,
                                     Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
-            }
         }
+    }
+
+	virtual void OnBuildingConstructionComplete(const Unit* unit) {
+		if (unit->unit_type.ToType() == UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+			Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+			Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
+		}
+	}
 
 	const Unit* scouter = NULL;
 	const Unit* base = NULL;
