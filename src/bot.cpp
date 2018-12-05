@@ -32,7 +32,7 @@ public:
 			
 			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 1) {
 				std::cout << "first RAX" << std::endl;
-
+				++rax;
 				++stage;
 			}
 			break;
@@ -505,6 +505,7 @@ private:
 	int enemypos = -1;
 	int scouting = 0;
 	int supplies;
+	int rax = 0;
 	bool makeSCV = true;
 	int stage = 0;
     Point2D buildPoint;
