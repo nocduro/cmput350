@@ -89,11 +89,10 @@ public:
 			}
 			break;
 		case 4:
-
 			if (Observation()->GetMinerals() >= 100) {
 				if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 1) {
 					std::cout << "second Supply Depot" << std::endl;
-					TryBuildSupplyDepot();
+					BuildSupplyDepotTwo(NULL);
 				}
 			}
 			if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 2) {
@@ -118,14 +117,9 @@ public:
 				++stage;
 			}
 			break;
-
-
 		}
 		//supplies now has our current supplies
 
-
-
-	
 	}
 	
 	virtual void OnUnitIdle(const Unit* unit) final {
@@ -259,7 +253,7 @@ private:
         }else {
 			Actions()->UnitCommand(unit_to_build,
 				ability_type_for_structure,
-				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+				Point2D(base->pos.x + rx * 15.0f, base->pos.y + ry * 15.0f));
 		}
 
 		return true;
@@ -389,6 +383,16 @@ private:
 		const Point2D startLocation = observation->GetStartLocation();
 		float rx = GetRandomScalar();
 		float ry = GetRandomScalar();
+
+
+		Units units = Observation()->GetUnits(Unit::Alliance::Self);
+		if (unit_to_build == NULL) {
+			for (const auto& unit : units) {
+				if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV && unit != scouter && (unit->orders.size() == 0 || unit->orders.front().ability_id == ABILITY_ID::HARVEST_GATHER)) {
+					unit_to_build = unit;
+				}
+			}
+		}
 
 		// second supply depot being built
 		// we want to build it at choke point
