@@ -7,7 +7,6 @@ using namespace sc2;
 class Bot : public Agent {
 public:
 	virtual void OnGameStart() final {
-		std::cout << "Can I get a pogchamp in the chat?" << std::endl;
 		assignScout();
 		assignBase();
 	}
@@ -15,6 +14,7 @@ public:
 	virtual void OnStep() final {
 		checkVision();
 		updateSupplies();
+		// std::cout << supplies << std::endl;
 		if (enemypos < 0) {
 			scout();
 		}
@@ -55,24 +55,22 @@ public:
 
 			
 			if (CountUnitType(UNIT_TYPEID::TERRAN_ORBITALCOMMAND)==0) {
-				std::cout << "orbital command" << std::endl;
 				UpgradeCC();
 				if (base->orders.size() != 0) {
+					// move stage if orbital command has begun
 					if (base->orders.front().ability_id == 1516) {
+						std::cout << "orbital command" << std::endl;
 						++stage;
 					}
 					
 				}
 			}
-			// std::cout << "orbital + marine" << std::endl;
-			
 			break;
 
 		case 3:
-			
 			if (Observation()->GetMinerals() >= 450 || raxstarted) {
 				raxstarted = true;
-				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) <4) { // less than 4 is kinda sketch, should always be 1
+				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 4) {
 					rax++;
 					
 					BuildBarracksAfter(NULL, 2);
@@ -100,6 +98,8 @@ public:
 			if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) + CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED) == 2) {
 				std::cout << "second depot was built, move to stage 5" << std::endl;
 				buildDepot = true;
+
+
 				++stage;
 			}
 			break;
@@ -124,7 +124,12 @@ public:
 			makeMarine = true;
 			++stage;
 		case 7:
-			rush();
+			Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+			if (marines.size() > 14) {
+				rush(marines);
+			} else if (marines.size() < 7) {
+				retreat(marines);
+			}
 			break;
 		}
 		//supplies now has our current supplies
@@ -166,12 +171,12 @@ public:
 		}
 	}
 private:
-	void rush() {
+	void rush(Units marines) {
 		const GameInfo& game_info = Observation()->GetGameInfo();
-		Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
-		if (marines.size() < 14) {
-			return;
-		}
+		// Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+		// if (marines.size() < 14) {
+		// 	return;
+		// }
 		//more than 14 marines, lets attack.
 		
 		//lower a depo to form a path
@@ -201,6 +206,12 @@ private:
 		}
 		
 	}
+
+	void retreat(Units marines) {
+		Actions()->UnitCommand(marines, ABILITY_ID::SMART, base->pos);
+
+	}
+
 	void assignBase() {
 		base = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_COMMANDCENTER)).front();
 	}
@@ -322,6 +333,7 @@ private:
 	void BuildSupplyDepotOne(const Unit* unit_to_build) {
 		const ObservationInterface* observation = Observation();
 		const Point2D startLocation = observation->GetStartLocation();
+		Units units = observation->GetUnits(Unit::Alliance::Self);
 		float rx = GetRandomScalar();
 		float ry = GetRandomScalar();
 
@@ -365,15 +377,23 @@ private:
 		Actions()->UnitCommand(unit_to_build,
 			ABILITY_ID::BUILD_SUPPLYDEPOT,
 			buildPoint);
+
+
 	}
 
 	void BuildBarracksOne(const Unit* unit_to_build) {
 		const ObservationInterface* observation = Observation();
 		const Point2D startLocation = observation->GetStartLocation();
+		Units units = observation->GetUnits(Unit::Alliance::Self,IsUnit(UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
 		float rx = GetRandomScalar();
 		float ry = GetRandomScalar();
-		Units units = observation->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
+
+		// std::cout << units.size() <<std::endl;
+
+		// we know only depot exists when first barracks is getting built
+		// so we store the supply depot into variable for later reference
 		supplyDepotOne = units.front();
+
 		// First barracks being built
 		// we want to build it at choke point
 
@@ -420,6 +440,7 @@ private:
 			for (const auto& unit : units) {
 				if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV && unit != scouter && (unit->orders.size() == 0 || unit->orders.front().ability_id == ABILITY_ID::HARVEST_GATHER)) {
 					unit_to_build = unit;
+					// std::cout << "UNIT FOUND" << std::endl;
 				}
 			}
 		}
@@ -454,8 +475,11 @@ private:
 		Actions()->UnitCommand(unit_to_build,
 				ABILITY_ID::BUILD_SUPPLYDEPOT,
 				buildPoint);
+
 		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+		std::cout << "lower depot 1" << std::endl;
 	}
+
     void BuildBarracksAfter(const Unit* unit_to_build,size_t Barrack ) {
         const ObservationInterface* observation = Observation();
         const Point2D startLocation = observation->GetStartLocation();
@@ -561,8 +585,25 @@ private:
             Actions()->UnitCommand(unit_to_build,
                                     ABILITY_ID::BUILD_BARRACKS,
                                     Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
-            }
         }
+    }
+
+	// virtual void OnBuildingConstructionComplete(const Unit* unit) {
+	// 	if (unit->unit_type.ToType() == UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+	// 		Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+	// 		// Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
+	// 	}
+	// }
+
+	// ! Called when an enemy unit enters vision from out of fog of war.
+    // !< \param unit The unit entering vision.
+    virtual void OnUnitEnterVision(const Unit*) {
+		
+		if (enemypos > 0) {
+			std::cout << "ENEMY" << std::endl;
+			Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
+		}
+	}
 
 	const Unit* scouter = NULL;
 	const Unit* base = NULL;
@@ -578,21 +619,25 @@ private:
 	bool enemynear=false;
 	const Unit* supplyDepotOne= NULL;
 	bool buildDepot = false;
+	// const Unit* supplyDepotOne;
+	// bool scouting_done = false;
+	// const Unit* supplyDepotTwo;
 
 };
 
 int main(int argc, char* argv[]) {
 	Coordinator coordinator;
 	coordinator.LoadSettings(argc, argv);
-	coordinator.SetStepSize(10);
+	coordinator.SetStepSize(1);
+	// coordinator.se
 
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss)
+		CreateComputer(Race::Protoss, MediumHard)
 	});
 
-	coordinator.SetWindowSize(1000,750);
+	coordinator.SetWindowSize(2000,1500);
 
 	coordinator.LaunchStarcraft();
 	coordinator.StartGame("CactusValleyLE.SC2Map");
