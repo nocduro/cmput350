@@ -180,7 +180,7 @@ private:
 				}
 			}
 
-			if (unit->unit_type == unit_type) {
+			if (unit->unit_type == unit_type && unit!=scouter) {
 				unit_to_build = unit;
 			}
 		}
@@ -224,7 +224,7 @@ private:
 		const Unit* target = nullptr;
 		for (const auto& u : units) {
 			if (u->unit_type == UNIT_TYPEID::NEUTRAL_MINERALFIELD) {
-				float d = DistanceSquared2D(u->pos, start);
+				float d = DistanceSquared2D(u->pos, base->pos);
 				if (d < distance) {
 					distance = d;
 					target = u;
