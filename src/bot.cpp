@@ -173,7 +173,7 @@ private:
 			return;
 		}
 		//more than 14 marines, lets attack.
-
+		
 		//lower a depo to form a path
 		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
 		Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
