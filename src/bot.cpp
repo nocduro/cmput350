@@ -50,22 +50,39 @@ public:
 					
 				}
 			}
-			std::cout << "orbital + marine" << std::endl;
+			// std::cout << "orbital + marine" << std::endl;
 			
 			break;
 
 		case 3:
 			
 			if (Observation()->GetMinerals() >= 450) {
-				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 4) {
+				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 4) { // less than 4 is kinda sketch, should always be 1
 					TryBuildBarracks();
 					TryBuildBarracks();
 					TryBuildBarracks();
 				}
 			}
 			makeSCV = true;
+
+			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 4) {
+				++stage;
+			}
+			break;
+		case 4:
+
+			if (Observation()->GetMinerals() >= 100) {
+				if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 1) {
+					TryBuildSupplyDepot();
+				}
+			}
+			if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 2) {
+				std::cout << "second depot" << std::endl;
+				++stage;
+			}
 			break;
 		}
+
 		//supplies now has our current supplies
 
 
@@ -171,9 +188,17 @@ private:
 		float rx = GetRandomScalar();
 		float ry = GetRandomScalar();
 
-		Actions()->UnitCommand(unit_to_build,
-			ability_type_for_structure,
-			Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+		if (ability_type_for_structure == ABILITY_ID::BUILD_SUPPLYDEPOT && CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 0) {
+			BuildSupplyDepotOne(unit_to_build);
+		} else if (ability_type_for_structure == ABILITY_ID::BUILD_BARRACKS && CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 0) {
+			BuildBarracksOne(unit_to_build);
+		} else if (ability_type_for_structure == ABILITY_ID::BUILD_SUPPLYDEPOT && CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 1) {
+			BuildSupplyDepotTwo(unit_to_build);
+		} else {
+			Actions()->UnitCommand(unit_to_build,
+				ability_type_for_structure,
+				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+		}
 
 		return true;
 	}
@@ -209,6 +234,155 @@ private:
 		return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS);
 	}
 
+	void BuildSupplyDepotOne(const Unit* unit_to_build) {
+		const ObservationInterface* observation = Observation();
+		const Point2D startLocation = observation->GetStartLocation();
+		float rx = GetRandomScalar();
+		float ry = GetRandomScalar();
+
+		// First supply depot being built
+		// we want to build it at choke point
+
+		// if base is at top left
+		if (startLocation.x < 100 && startLocation.y > 100) {
+			std::cout << "position top left" << std::endl;
+
+			// Build first supply depot at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(51,160));
+
+		// if base top right
+		} else if (startLocation.x > 100 && startLocation.y > 100) {
+			std::cout << "position top right" << std::endl;
+
+			// Build first supply depot at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(160,141));
+
+		// if base bottom right
+		} else if (startLocation.x > 100 && startLocation.y < 100) {
+			std::cout << "position bottom right" << std::endl;
+
+			// Build first supply depot at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(138,29));				
+
+		// if base bottom left
+		} else if (startLocation.x < 100 && startLocation.y < 100) {
+			std::cout << "position bottom left" << std::endl;
+
+			// Build first supply depot at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(29,54));
+
+		// error control (SHOULD NEVER HAPPEN)		
+		} else {
+			std::cout << "LOCATION ERROR" << std::endl;
+			std::cout << startLocation.x << ", " << startLocation.y << std::endl;
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+		}
+	}
+
+	void BuildBarracksOne(const Unit* unit_to_build) {
+		const ObservationInterface* observation = Observation();
+		const Point2D startLocation = observation->GetStartLocation();
+		float rx = GetRandomScalar();
+		float ry = GetRandomScalar();
+
+		// First barracks being built
+		// we want to build it at choke point
+
+		// if base is at top left
+		if (startLocation.x < 100 && startLocation.y > 100) {
+			// Build first barracks at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_BARRACKS,
+				Point2D(51,162));
+
+		// if base top right
+		} else if (startLocation.x > 100 && startLocation.y > 100) {
+			// Build first barracks at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_BARRACKS,
+				Point2D(162,140));
+
+		// if base bottom right
+		} else if (startLocation.x > 100 && startLocation.y < 100) {
+			// Build first barracks at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_BARRACKS,
+				Point2D(140,29));				
+
+		// if base bottom left
+		} else if (startLocation.x < 100 && startLocation.y < 100) {
+			// Build first barracks at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_BARRACKS,
+				Point2D(29,51));
+
+		// error control (SHOULD NEVER HAPPEN)		
+		} else {
+			std::cout << "LOCATION ERROR" << std::endl;
+			std::cout << startLocation.x << ", " << startLocation.y << std::endl;
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_BARRACKS,
+				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+		}
+	}
+
+	void BuildSupplyDepotTwo(const Unit* unit_to_build) {
+		const ObservationInterface* observation = Observation();
+		const Point2D startLocation = observation->GetStartLocation();
+		float rx = GetRandomScalar();
+		float ry = GetRandomScalar();
+
+		// second supply depot being built
+		// we want to build it at choke point
+
+		// if base is at top left
+		if (startLocation.x < 100 && startLocation.y > 100) {
+			// Build second supply depot at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(54,163));
+
+		// if base top right
+		} else if (startLocation.x > 100 && startLocation.y > 100) {
+			// Build second supply depot at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(163,138));
+
+		// if base bottom right
+		} else if (startLocation.x > 100 && startLocation.y < 100) {
+			// Build second supply depot at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(141,32));				
+
+		// if base bottom left
+		} else if (startLocation.x < 100 && startLocation.y < 100) {
+			// Build second supply depot at choke point
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(30,52));
+
+		// error control (SHOULD NEVER HAPPEN)		
+		} else {
+			std::cout << "LOCATION ERROR" << std::endl;
+			std::cout << startLocation.x << ", " << startLocation.y << std::endl;
+			Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+		}
+	}
+
 	const Unit* scouter = NULL;
 	const Unit* base = NULL;
 	int enemypos = -1;
@@ -216,6 +390,7 @@ private:
 	int supplies;
 	bool makeSCV = true;
 	int stage = 0;
+	
 
 };
 
@@ -229,6 +404,8 @@ int main(int argc, char* argv[]) {
 		CreateParticipant(Race::Terran, &bot),
 		CreateComputer(Race::Zerg)
 	});
+
+	coordinator.SetWindowSize(2000,1500);
 
 	coordinator.LaunchStarcraft();
 	coordinator.StartGame("CactusValleyLE.SC2Map");
