@@ -194,7 +194,17 @@ private:
 			BuildBarracksOne(unit_to_build);
 		} else if (ability_type_for_structure == ABILITY_ID::BUILD_SUPPLYDEPOT && CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 1) {
 			BuildSupplyDepotTwo(unit_to_build);
-		} else {
+        } else if (ability_type_for_structure == ABILITY_ID::BUILD_BARRACKS && CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 1) {
+            BuildBarracksAfter(unit_to_build, 2);
+        }else if (ability_type_for_structure == ABILITY_ID::BUILD_BARRACKS && CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 2) {
+           BuildBarracksAfter(unit_to_build, 3);
+        }else if (ability_type_for_structure == ABILITY_ID::BUILD_BARRACKS && CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 3) {
+            BuildBarracksAfter(unit_to_build, 4);
+        }else if (ability_type_for_structure == ABILITY_ID::BUILD_BARRACKS && CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 4) {
+            BuildBarracksAfter(unit_to_build, 5);
+        }else if (ability_type_for_structure == ABILITY_ID::BUILD_BARRACKS && CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 5) {
+            BuildBarracksAfter(unit_to_build, 6);
+        }else {
 			Actions()->UnitCommand(unit_to_build,
 				ability_type_for_structure,
 				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
@@ -382,6 +392,113 @@ private:
 				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
 		}
 	}
+    void BuildBarracksAfter(const Unit* unit_to_build,size_t Barrack ) {
+        const ObservationInterface* observation = Observation();
+        const Point2D startLocation = observation->GetStartLocation();
+        float rx = GetRandomScalar();
+        float ry = GetRandomScalar();
+        
+            
+        // First barracks being built
+        // we want to build it at choke point
+            
+        // if base is at top left
+        if (startLocation.x < 100 && startLocation.y > 100) {
+            // Build first barracks at choke point
+            if (Barrack == 2 ){
+                buildPoint = Point2D(34.5,151.5);
+            }
+            else if (Barrack == 3){
+                buildPoint = Point2D(37.5,152.5);
+            }
+            else if (Barrack == 4){
+                buildPoint = Point2D(40.5,153.5);
+            }
+            else if (Barrack == 5){
+                buildPoint = Point2D(43.5,154.5);
+            }
+            else if (Barrack == 6){
+                buildPoint = Point2D(47.5,155.5);
+            }
+            Actions()->UnitCommand(unit_to_build,
+                                    ABILITY_ID::BUILD_BARRACKS,
+                                    buildPoint);
+                
+            // if base top right
+        } else if (startLocation.x > 100 && startLocation.y > 100) {
+            // Build first barracks at choke point
+            if (Barrack == 2 ){
+                buildPoint = Point2D(150.5,156.5);
+            }
+            else if (Barrack == 3){
+                buildPoint = Point2D(152.5,153.5);
+            }
+            else if (Barrack == 4){
+                buildPoint = Point2D(154.5,150.5);
+            }
+            else if (Barrack == 5){
+                buildPoint = Point2D(156.5,147.5);
+            }
+            else if (Barrack == 6){
+                buildPoint = Point2D(158.5,144.5);
+            }
+            Actions()->UnitCommand(unit_to_build,
+                                    ABILITY_ID::BUILD_BARRACKS,
+                                    buildPoint);
+                
+            // if base bottom right
+        } else if (startLocation.x > 100 && startLocation.y < 100) {
+            // Build first barracks at choke point
+            if (Barrack == 2 ){
+                buildPoint = Point2D(157.5,41.5);
+            }
+            else if (Barrack == 3){
+                buildPoint = Point2D(154.5,39.5);
+            }
+            else if (Barrack == 4){
+                buildPoint = Point2D(151.5,37.5);
+            }
+            else if (Barrack == 5){
+                buildPoint = Point2D(148.5,35.5);
+            }
+            else if (Barrack == 6){
+                buildPoint = Point2D(145.5,33.5);
+            }
+            Actions()->UnitCommand(unit_to_build,
+                                    ABILITY_ID::BUILD_BARRACKS,
+                                    buildPoint);
+                
+            // if base bottom left
+        } else if (startLocation.x < 100 && startLocation.y < 100) {
+            // Build first barracks at choke point
+            if (Barrack == 2 ){
+                buildPoint = Point2D(42.5,34.5);
+            }
+            else if (Barrack == 3){
+                buildPoint = Point2D(40.5,37.5);
+            }
+            else if (Barrack == 4){
+                buildPoint = Point2D(38.5,40.5);
+            }
+            else if (Barrack == 5){
+                buildPoint = Point2D(36.5,43.5);
+            }
+            else if (Barrack == 6){
+                buildPoint = Point2D(34.5,46.5);
+            }
+            Actions()->UnitCommand(unit_to_build,
+                                    ABILITY_ID::BUILD_BARRACKS,
+                                    buildPoint);
+                
+                // error control (SHOULD NEVER HAPPEN)
+        } else {
+            std::cout << "LOCATION ERROR" << std::endl;
+            std::cout << startLocation.x << ", " << startLocation.y << std::endl;
+            Actions()->UnitCommand(unit_to_build,
+                                    ABILITY_ID::BUILD_BARRACKS,
+                                    Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+            }
+        }
 
 	const Unit* scouter = NULL;
 	const Unit* base = NULL;
@@ -390,6 +507,7 @@ private:
 	int supplies;
 	bool makeSCV = true;
 	int stage = 0;
+    Point2D buildPoint;
 	
 
 };
