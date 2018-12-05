@@ -32,7 +32,7 @@ public:
 			
 			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 1) {
 				std::cout << "first RAX" << std::endl;
-
+				++rax;
 				++stage;
 			}
 			break;
@@ -58,12 +58,14 @@ public:
 
 		case 3:
 			
-			if (Observation()->GetMinerals() >= 450) {
-				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 4) { // less than 4 is kinda sketch, should always be 1
-					std::cout << "build RAX 2,3,4" << std::endl;
-					TryBuildBarracks();
-					TryBuildBarracks();
-					TryBuildBarracks();
+			if (Observation()->GetMinerals() >= 450 || raxstarted) {
+				raxstarted = true;
+				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) <4) { // less than 4 is kinda sketch, should always be 1
+					rax++;
+					
+					BuildBarracksAfter(NULL, 2);
+					BuildBarracksAfter(NULL, 3);
+					BuildBarracksAfter(NULL, 4);
 				}
 			}
 			makeSCV = true;
@@ -380,6 +382,14 @@ private:
         const Point2D startLocation = observation->GetStartLocation();
         float rx = GetRandomScalar();
         float ry = GetRandomScalar();
+		Units units = Observation()->GetUnits(Unit::Alliance::Self);
+		if (unit_to_build == NULL) {
+			for (const auto& unit : units) {
+				if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV && unit != scouter && (unit->orders.size()==0 ||unit->orders.front().ability_id != ABILITY_ID::BUILD_BARRACKS)) {
+					unit_to_build = unit;
+				}
+			}
+		}
             
         // if base is at top left
         if (startLocation.x < 100 && startLocation.y > 100) {
@@ -479,7 +489,9 @@ private:
 	const Unit* base = NULL;
 	int enemypos = -1;
 	int scouting = 0;
+	bool raxstarted;
 	int supplies;
+	int rax = 0;
 	bool makeSCV = true;
 	int stage = 0;
     Point2D buildPoint;
