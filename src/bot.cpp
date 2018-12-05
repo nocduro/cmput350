@@ -49,24 +49,22 @@ public:
 				makeSCV = false;
 			}
 			if (CountUnitType(UNIT_TYPEID::TERRAN_ORBITALCOMMAND)==0) {
-				std::cout << "orbital command" << std::endl;
 				UpgradeCC();
 				if (base->orders.size() != 0) {
+					// move stage if orbital command has begun
 					if (base->orders.front().ability_id == 1516) {
+						std::cout << "orbital command" << std::endl;
 						++stage;
 					}
 					
 				}
 			}
-			// std::cout << "orbital + marine" << std::endl;
-			
 			break;
 
 		case 3:
-			
 			if (Observation()->GetMinerals() >= 450 || raxstarted) {
 				raxstarted = true;
-				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) <4) { // less than 4 is kinda sketch, should always be 1
+				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 4) {
 					rax++;
 					
 					BuildBarracksAfter(NULL, 2);
@@ -86,7 +84,6 @@ public:
 
 			if (Observation()->GetMinerals() >= 100) {
 				if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 1) {
-					std::cout << "second Supply Depot" << std::endl;
 					TryBuildSupplyDepot();
 				}
 			}
