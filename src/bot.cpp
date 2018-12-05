@@ -43,11 +43,15 @@ public:
 			}
 			break;
 		case 2:
-			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) == 0 && makeSCV) {
-				std::cout << "stop SCV production" << std::endl;
-				trainMarine(1);
+
+			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) == 0 || makeSCV) {
+				makeMarine = true;
+
+
 				makeSCV = false;
 			}
+
+			
 			if (CountUnitType(UNIT_TYPEID::TERRAN_ORBITALCOMMAND)==0) {
 				std::cout << "orbital command" << std::endl;
 				UpgradeCC();
@@ -76,9 +80,11 @@ public:
 			}
 			makeSCV = true;
 
+			makeMarine = false;
 			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 4) {
 				std::cout << "four RAX exist, move to stage 4" << std::endl;
 				raxstarted = false;
+
 				++stage;
 			}
 			break;
@@ -121,7 +127,7 @@ public:
 
 	
 	}
-
+	
 	virtual void OnUnitIdle(const Unit* unit) final {
 		switch (unit->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
@@ -139,7 +145,9 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_BARRACKS: {
-			//idle until told
+			if (makeMarine) {
+				Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+			}
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_MARINE: {
@@ -155,11 +163,23 @@ private:
 	void assignBase() {
 		base = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_COMMANDCENTER)).front();
 	}
-	void trainMarine(int count) {
+	void trainMarine() {
+		Units units = Observation()->GetUnits(Unit::Alliance::Self);
 		Units rax = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
-		for (size_t i = 0; i < count; ++i) {
-			Actions()->UnitCommand(rax.front(), ABILITY_ID::TRAIN_MARINE);
+		/*
+		for (const auto& unit : units) {
+			if (unit->unit_type == UNIT_TYPEID::TERRAN_BARRACKS && unit->orders.size() == 0) {
+				Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+				break;
+			}
 		}
+		*/
+		while (rax[0]->orders.front().ability_id == ABILITY_ID::TRAIN_MARINE) {
+			Actions()->UnitCommand(rax[0], ABILITY_ID::TRAIN_MARINE);
+		}
+		std::cout << "marine" << std::endl;
+		
+		
 	}
 	void UpgradeCC() {
 		//upgrade our base to an orbital command
@@ -514,21 +534,22 @@ private:
 	const Unit* base = NULL;
 	int enemypos = -1;
 	int scouting = 0;
+	bool makeMarine=false;
 	bool raxstarted;
 	int supplies;
 	int rax = 0;
 	bool makeSCV = true;
 	int stage = 0;
-    Point2D buildPoint;
+  Point2D buildPoint;
+
 	bool buildDepot = false;
-	
 
 };
 
 int main(int argc, char* argv[]) {
 	Coordinator coordinator;
 	coordinator.LoadSettings(argc, argv);
-	coordinator.SetStepSize(1);
+	coordinator.SetStepSize(10);
 
 	Bot bot;
 	coordinator.SetParticipants({
@@ -536,7 +557,7 @@ int main(int argc, char* argv[]) {
 		CreateComputer(Race::Zerg)
 	});
 
-	coordinator.SetWindowSize(2000,1500);
+	coordinator.SetWindowSize(1000,750);
 
 	coordinator.LaunchStarcraft();
 	coordinator.StartGame("CactusValleyLE.SC2Map");
