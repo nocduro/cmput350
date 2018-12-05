@@ -43,11 +43,15 @@ public:
 			}
 			break;
 		case 2:
-			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) == 0 && makeSCV) {
-				std::cout << "stop SCV production" << std::endl;
-				trainMarine(1);
+
+			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) == 0 || makeSCV) {
+				makeMarine = true;
+
+
 				makeSCV = false;
 			}
+
+			
 			if (CountUnitType(UNIT_TYPEID::TERRAN_ORBITALCOMMAND)==0) {
 				UpgradeCC();
 				if (base->orders.size() != 0) {
@@ -74,23 +78,27 @@ public:
 			}
 			makeSCV = true;
 
+			makeMarine = false;
 			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 4) {
 				std::cout << "four RAX exist, move to stage 4" << std::endl;
 				raxstarted = false;
+
 				++stage;
 			}
 			break;
 		case 4:
-
 			if (Observation()->GetMinerals() >= 100) {
 				if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 1) {
-					TryBuildSupplyDepot();
+					std::cout << "second Supply Depot" << std::endl;
+					BuildSupplyDepotTwo(NULL);
 				}
 			}
 			if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 2) {
 				// Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
 				std::cout << "second depot was built, move to stage 5" << std::endl;
 				buildDepot = true;
+
+
 				++stage;
 			}
 			break;
@@ -110,16 +118,11 @@ public:
 				++stage;
 			}
 			break;
-
-
 		}
 		//supplies now has our current supplies
 
-
-
-	
 	}
-
+	
 	virtual void OnUnitIdle(const Unit* unit) final {
 		switch (unit->unit_type.ToType()) {
 		case UNIT_TYPEID::TERRAN_COMMANDCENTER: {
@@ -137,7 +140,9 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_BARRACKS: {
-			//idle until told
+			if (makeMarine) {
+				Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+			}
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_MARINE: {
@@ -153,11 +158,23 @@ private:
 	void assignBase() {
 		base = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_COMMANDCENTER)).front();
 	}
-	void trainMarine(int count) {
+	void trainMarine() {
+		Units units = Observation()->GetUnits(Unit::Alliance::Self);
 		Units rax = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
-		for (size_t i = 0; i < count; ++i) {
-			Actions()->UnitCommand(rax.front(), ABILITY_ID::TRAIN_MARINE);
+		/*
+		for (const auto& unit : units) {
+			if (unit->unit_type == UNIT_TYPEID::TERRAN_BARRACKS && unit->orders.size() == 0) {
+				Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+				break;
+			}
 		}
+		*/
+		while (rax[0]->orders.front().ability_id == ABILITY_ID::TRAIN_MARINE) {
+			Actions()->UnitCommand(rax[0], ABILITY_ID::TRAIN_MARINE);
+		}
+		std::cout << "marine" << std::endl;
+		
+		
 	}
 	void UpgradeCC() {
 		//upgrade our base to an orbital command
@@ -237,7 +254,7 @@ private:
         }else {
 			Actions()->UnitCommand(unit_to_build,
 				ability_type_for_structure,
-				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+				Point2D(base->pos.x + rx * 15.0f, base->pos.y + ry * 15.0f));
 		}
 
 		return true;
@@ -277,6 +294,7 @@ private:
 	void BuildSupplyDepotOne(const Unit* unit_to_build) {
 		const ObservationInterface* observation = Observation();
 		const Point2D startLocation = observation->GetStartLocation();
+		Units units = observation->GetUnits(Unit::Alliance::Self);
 		float rx = GetRandomScalar();
 		float ry = GetRandomScalar();
 
@@ -320,13 +338,23 @@ private:
 		Actions()->UnitCommand(unit_to_build,
 			ABILITY_ID::BUILD_SUPPLYDEPOT,
 			buildPoint);
+
+
 	}
 
 	void BuildBarracksOne(const Unit* unit_to_build) {
 		const ObservationInterface* observation = Observation();
 		const Point2D startLocation = observation->GetStartLocation();
+		Units units = observation->GetUnits(Unit::Alliance::Self,IsUnit(UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
 		float rx = GetRandomScalar();
 		float ry = GetRandomScalar();
+
+		// std::cout << units.size() <<std::endl;
+
+		// we know only depot exists when first barracks is getting built
+		// so we store the supply depot into variable for later reference
+		supplyDepotOne = units[0]; 
+
 
 		// First barracks being built
 		// we want to build it at choke point
@@ -368,6 +396,17 @@ private:
 		float rx = GetRandomScalar();
 		float ry = GetRandomScalar();
 
+
+		Units units = Observation()->GetUnits(Unit::Alliance::Self);
+		if (unit_to_build == NULL) {
+			for (const auto& unit : units) {
+				if (unit->unit_type == UNIT_TYPEID::TERRAN_SCV && unit != scouter && (unit->orders.size() == 0 || unit->orders.front().ability_id == ABILITY_ID::HARVEST_GATHER)) {
+					unit_to_build = unit;
+					// std::cout << "UNIT FOUND" << std::endl;
+				}
+			}
+		}
+
 		// second supply depot being built
 		// we want to build it at choke point
 
@@ -399,6 +438,9 @@ private:
 		Actions()->UnitCommand(unit_to_build,
 				ABILITY_ID::BUILD_SUPPLYDEPOT,
 				buildPoint);
+
+		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+		std::cout << "lower depot 1" << std::endl;
 	}
 
     void BuildBarracksAfter(const Unit* unit_to_build,size_t Barrack ) {
@@ -509,10 +551,20 @@ private:
         }
     }
 
-	virtual void OnBuildingConstructionComplete(const Unit* unit) {
-		if (unit->unit_type.ToType() == UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
-			Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
-			Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
+	// virtual void OnBuildingConstructionComplete(const Unit* unit) {
+	// 	if (unit->unit_type.ToType() == UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+	// 		Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+	// 		// Actions()->UnitCommand(unit, ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
+	// 	}
+	// }
+
+	// ! Called when an enemy unit enters vision from out of fog of war.
+    // !< \param unit The unit entering vision.
+    virtual void OnUnitEnterVision(const Unit*) {
+		
+		if (enemypos > 0) {
+			std::cout << "ENEMY" << std::endl;
+			Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
 		}
 	}
 
@@ -520,26 +572,29 @@ private:
 	const Unit* base = NULL;
 	int enemypos = -1;
 	int scouting = 0;
+	bool makeMarine=false;
 	bool raxstarted;
 	int supplies;
 	int rax = 0;
 	bool makeSCV = true;
 	int stage = 0;
-    Point2D buildPoint;
+  	Point2D buildPoint;
 	bool buildDepot = false;
-	
+	const Unit* supplyDepotOne;
+	// bool scouting_done = false;
+	// const Unit* supplyDepotTwo;
 
 };
 
 int main(int argc, char* argv[]) {
 	Coordinator coordinator;
 	coordinator.LoadSettings(argc, argv);
-	coordinator.SetStepSize(1);
+	coordinator.SetStepSize(10);
 
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Zerg)
+		CreateComputer(Race::Protoss)
 	});
 
 	coordinator.SetWindowSize(2000,1500);
