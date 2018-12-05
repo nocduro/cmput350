@@ -17,6 +17,12 @@ public:
 		if (enemypos < 0) {
 			scout();
 		}
+
+		// keep building supply depots after supply depot 2
+		if (buildDepot == true) {
+			TryBuildSupplyDepot();
+		}
+
 		switch (stage) {
 		case 0:
 			if (Observation()->GetMinerals() >= 100) {
@@ -72,6 +78,7 @@ public:
 
 			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 4) {
 				std::cout << "four RAX exist, move to stage 4" << std::endl;
+				raxstarted = false;
 				++stage;
 			}
 			break;
@@ -85,11 +92,29 @@ public:
 			}
 			if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 2) {
 				std::cout << "second depot was built, move to stage 5" << std::endl;
+				buildDepot = true;
 				++stage;
 			}
 			break;
-		}
+		case 5:
+			if (Observation()->GetMinerals() >= 300 || raxstarted) {
+				raxstarted = true;
+				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 4) { // less than 4 is kinda sketch, should always be 1
+					rax++;
+					
+					BuildBarracksAfter(NULL, 5);
+					BuildBarracksAfter(NULL, 6);
+				}
+			}
 
+			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 6) {
+				std::cout << "6 RAX exist, move to stage 6" << std::endl;
+				++stage;
+			}
+			break;
+
+
+		}
 		//supplies now has our current supplies
 
 
@@ -495,6 +520,7 @@ private:
 	bool makeSCV = true;
 	int stage = 0;
     Point2D buildPoint;
+	bool buildDepot = false;
 	
 
 };
