@@ -9,6 +9,7 @@ public:
 	virtual void OnGameStart() final {
 		std::cout << "Can I get a pogchamp in the chat?" << std::endl;
 		assignScout();
+		assignBase();
 	}
 
 	virtual void OnStep() final {
@@ -28,21 +29,28 @@ public:
 			break;
 		case 1:
 			TryBuildBarracks();
-		
+			
 			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 1) {
 				std::cout << "first RAX" << std::endl;
+
 				++stage;
 			}
 			break;
 		case 2:
-			UpgradeCC();
 			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) == 0 && makeSCV) {
 				trainMarine(1);
 				makeSCV = false;
 			}
-			
+			if (CountUnitType(UNIT_TYPEID::TERRAN_ORBITALCOMMAND)==0) {
+				UpgradeCC();
+				if (base->orders.size() != 0) {
+					if (base->orders.front().ability_id == 1516) {
+						++stage;
+					}
+					
+				}
+			}
 			std::cout << "orbital + marine" << std::endl;
-			++stage;
 			
 			break;
 
@@ -50,6 +58,8 @@ public:
 			
 			if (Observation()->GetMinerals() >= 450) {
 				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 4) {
+					TryBuildBarracks();
+					TryBuildBarracks();
 					TryBuildBarracks();
 				}
 			}
@@ -93,6 +103,9 @@ public:
 		}
 	}
 private:
+	void assignBase() {
+		base = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_COMMANDCENTER)).front();
+	}
 	void trainMarine(int count) {
 		Units rax = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
 		for (size_t i = 0; i < count; ++i) {
@@ -197,6 +210,7 @@ private:
 	}
 
 	const Unit* scouter = NULL;
+	const Unit* base = NULL;
 	int enemypos = -1;
 	int scouting = 0;
 	int supplies;
