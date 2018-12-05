@@ -38,10 +38,12 @@ public:
 			break;
 		case 2:
 			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) == 0 && makeSCV) {
+				std::cout << "stop SCV production" << std::endl;
 				trainMarine(1);
 				makeSCV = false;
 			}
 			if (CountUnitType(UNIT_TYPEID::TERRAN_ORBITALCOMMAND)==0) {
+				std::cout << "orbital command" << std::endl;
 				UpgradeCC();
 				if (base->orders.size() != 0) {
 					if (base->orders.front().ability_id == 1516) {
@@ -58,6 +60,7 @@ public:
 			
 			if (Observation()->GetMinerals() >= 450) {
 				if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) < 4) { // less than 4 is kinda sketch, should always be 1
+					std::cout << "build RAX 2,3,4" << std::endl;
 					TryBuildBarracks();
 					TryBuildBarracks();
 					TryBuildBarracks();
@@ -66,6 +69,7 @@ public:
 			makeSCV = true;
 
 			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 4) {
+				std::cout << "four RAX exist, move to stage 4" << std::endl;
 				++stage;
 			}
 			break;
@@ -73,11 +77,12 @@ public:
 
 			if (Observation()->GetMinerals() >= 100) {
 				if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 1) {
+					std::cout << "second Supply Depot" << std::endl;
 					TryBuildSupplyDepot();
 				}
 			}
 			if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 2) {
-				std::cout << "second depot" << std::endl;
+				std::cout << "second depot was built, move to stage 5" << std::endl;
 				++stage;
 			}
 			break;
@@ -257,46 +262,39 @@ private:
 		if (startLocation.x < 100 && startLocation.y > 100) {
 			std::cout << "position top left" << std::endl;
 
-			// Build first supply depot at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(51,160));
+			buildPoint = Point2D(51,160);
 
 		// if base top right
 		} else if (startLocation.x > 100 && startLocation.y > 100) {
 			std::cout << "position top right" << std::endl;
 
-			// Build first supply depot at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(160,141));
+			buildPoint = Point2D(160,141);
 
 		// if base bottom right
 		} else if (startLocation.x > 100 && startLocation.y < 100) {
 			std::cout << "position bottom right" << std::endl;
 
-			// Build first supply depot at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(138,29));				
+			buildPoint = Point2D(138,29);			
 
 		// if base bottom left
 		} else if (startLocation.x < 100 && startLocation.y < 100) {
 			std::cout << "position bottom left" << std::endl;
 
-			// Build first supply depot at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(29,54));
+			buildPoint = Point2D(29,54);
 
 		// error control (SHOULD NEVER HAPPEN)		
 		} else {
 			std::cout << "LOCATION ERROR" << std::endl;
 			std::cout << startLocation.x << ", " << startLocation.y << std::endl;
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+			buildPoint = Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f);
 		}
+
+		// buildPoint = Point2D(32,51);
+
+		// build supply depot at choke point
+		Actions()->UnitCommand(unit_to_build,
+			ABILITY_ID::BUILD_SUPPLYDEPOT,
+			buildPoint);
 	}
 
 	void BuildBarracksOne(const Unit* unit_to_build) {
@@ -310,40 +308,33 @@ private:
 
 		// if base is at top left
 		if (startLocation.x < 100 && startLocation.y > 100) {
-			// Build first barracks at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_BARRACKS,
-				Point2D(51,162));
+			buildPoint = Point2D(51,162);
 
 		// if base top right
 		} else if (startLocation.x > 100 && startLocation.y > 100) {
-			// Build first barracks at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_BARRACKS,
-				Point2D(162,140));
+			buildPoint = Point2D(162,140);
 
 		// if base bottom right
 		} else if (startLocation.x > 100 && startLocation.y < 100) {
-			// Build first barracks at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_BARRACKS,
-				Point2D(140,29));				
+			buildPoint = Point2D(140,29);			
 
 		// if base bottom left
 		} else if (startLocation.x < 100 && startLocation.y < 100) {
-			// Build first barracks at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_BARRACKS,
-				Point2D(29,51));
+			buildPoint = Point2D(29,51);
 
 		// error control (SHOULD NEVER HAPPEN)		
 		} else {
 			std::cout << "LOCATION ERROR" << std::endl;
 			std::cout << startLocation.x << ", " << startLocation.y << std::endl;
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_BARRACKS,
-				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+			buildPoint = Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f);
 		}
+
+		// buildPoint = Point2D(29,51);
+
+		// Build first barracks at choke point
+		Actions()->UnitCommand(unit_to_build,
+			ABILITY_ID::BUILD_BARRACKS,
+			buildPoint);
 	}
 
 	void BuildSupplyDepotTwo(const Unit* unit_to_build) {
@@ -357,54 +348,41 @@ private:
 
 		// if base is at top left
 		if (startLocation.x < 100 && startLocation.y > 100) {
-			// Build second supply depot at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(54,163));
+			buildPoint = Point2D(54,163);
 
 		// if base top right
 		} else if (startLocation.x > 100 && startLocation.y > 100) {
-			// Build second supply depot at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(163,138));
+			buildPoint = Point2D(163,138);
 
 		// if base bottom right
 		} else if (startLocation.x > 100 && startLocation.y < 100) {
-			// Build second supply depot at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(141,32));				
+			buildPoint = Point2D(141,32);				
 
 		// if base bottom left
 		} else if (startLocation.x < 100 && startLocation.y < 100) {
-			// Build second supply depot at choke point
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(30,52));
+			buildPoint = Point2D(32,51);
 
 		// error control (SHOULD NEVER HAPPEN)		
 		} else {
 			std::cout << "LOCATION ERROR" << std::endl;
 			std::cout << startLocation.x << ", " << startLocation.y << std::endl;
-			Actions()->UnitCommand(unit_to_build,
-				ABILITY_ID::BUILD_SUPPLYDEPOT,
-				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
+			buildPoint = Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f);
 		}
+
+		// buildPoint = Point2D(29,54);
+
+		Actions()->UnitCommand(unit_to_build,
+				ABILITY_ID::BUILD_SUPPLYDEPOT,
+				buildPoint);
 	}
     void BuildBarracksAfter(const Unit* unit_to_build,size_t Barrack ) {
         const ObservationInterface* observation = Observation();
         const Point2D startLocation = observation->GetStartLocation();
         float rx = GetRandomScalar();
         float ry = GetRandomScalar();
-        
-            
-        // First barracks being built
-        // we want to build it at choke point
             
         // if base is at top left
         if (startLocation.x < 100 && startLocation.y > 100) {
-            // Build first barracks at choke point
             if (Barrack == 2 ){
                 buildPoint = Point2D(34.5,151.5);
             }
@@ -424,9 +402,8 @@ private:
                                     ABILITY_ID::BUILD_BARRACKS,
                                     buildPoint);
                 
-            // if base top right
+        // if base top right
         } else if (startLocation.x > 100 && startLocation.y > 100) {
-            // Build first barracks at choke point
             if (Barrack == 2 ){
                 buildPoint = Point2D(150.5,156.5);
             }
@@ -446,9 +423,8 @@ private:
                                     ABILITY_ID::BUILD_BARRACKS,
                                     buildPoint);
                 
-            // if base bottom right
+        // if base bottom right
         } else if (startLocation.x > 100 && startLocation.y < 100) {
-            // Build first barracks at choke point
             if (Barrack == 2 ){
                 buildPoint = Point2D(157.5,41.5);
             }
@@ -468,9 +444,8 @@ private:
                                     ABILITY_ID::BUILD_BARRACKS,
                                     buildPoint);
                 
-            // if base bottom left
+        // if base bottom left
         } else if (startLocation.x < 100 && startLocation.y < 100) {
-            // Build first barracks at choke point
             if (Barrack == 2 ){
                 buildPoint = Point2D(42.5,34.5);
             }
