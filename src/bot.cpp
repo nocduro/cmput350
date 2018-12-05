@@ -343,8 +343,71 @@ private:
 		if (depth > 15.0f) {
 			depth = 1.0f;
 		}
+
+
+
+
+
+		// if it's a first supply depot, place it at the barrier
+		if (CountUnitType(UNIT_TYPEID::TERRAN_SUPPLYDEPOT) <= 0 && ability_type_for_structure == ABILITY_ID::BUILD_SUPPLYDEPOT) {
+			std::cout << "BUILDING FIRST SUPPLY DEPOT" << std::endl;
+			// if position 0
+			// place supply depot at x,y
+			// if (playerpos.x < 100 && playerpos.y > 100) {
+				// std::cout << "position: 0" << std::endl;
+			Actions()->UnitCommand(unit_to_build, ability_type_for_structure, Point2D(163, 138));
+			// } else if (playerpos.x > 100 && playerpos.y > 100) {
+			// 	std::cout << "position: 1" << std::endl;
+			// 	Actions()->UnitCommand(unit_to_build, ability_type_for_structure, Point2D(29,54));
+			// } else if (playerpos.x > 100 && playerpos.y < 100) {
+			// 	std::cout << "position: 2" << std::endl;
+			// 	Actions()->UnitCommand(unit_to_build, ability_type_for_structure, Point2D(29,54));
+			// } else if (playerpos.x < 100 && playerpos.y < 100) {
+			// 	std::cout << "position: 3" << std::endl;
+			// 	Actions()->UnitCommand(unit_to_build, ability_type_for_structure, Point2D(29,54));
+			// } else {
+			// 	std::cout << "NONE" << std::endl;
+			// }
+		} else if (ability_type_for_structure == ABILITY_ID::BUILD_BARRACKS) {
+			std::cout << "BUILDING FIRST RAX" << std::endl;
+			Actions()->UnitCommand(unit_to_build, ability_type_for_structure, Point2D(162,140));
+
+	
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		// if the structure type we want to build is a refinery, find nearest geyser and build
-        if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
+        } else if (ability_type_for_structure == ABILITY_ID::BUILD_REFINERY) {
             Actions()->UnitCommand(unit_to_build, ability_type_for_structure, FindNearestObject(unit_to_build->pos,UNIT_TYPEID::NEUTRAL_VESPENEGEYSER));
 
         // } else if (ability_type_for_structure == ABILITY_ID::BUILD_COMMANDCENTER) {
