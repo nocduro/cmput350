@@ -123,23 +123,15 @@ public:
 		case 6: //start amassing our marine army and move to next stage
 			makeMarine = true;
 			++stage;
-		case 7:
-			
-			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) > 10) {
-				
-				++stage;
-			}
-			break;
 		
-		case 8:
+		case 7:
 			Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
 
 			if (marines.size() > optimalmar) {
 				rush();
-				//optimalmar = 22;
+				optimalmar = 24;
 			} else if (marines.size() < 7 && rushed == true) {
 				retreat(marines);
-				--stage;
 			}
 			break;
 
@@ -686,7 +678,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss, Medium)
+		CreateComputer(Race::Protoss, MediumHard)
 	});
 
 	coordinator.SetWindowSize(2000,1500);
