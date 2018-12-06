@@ -126,7 +126,7 @@ public:
 		case 7:
 			
 			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) > 10) {
-				//huddle();
+				
 				++stage;
 			}
 			break;
@@ -183,31 +183,6 @@ public:
 		}
 	}
 private:
-	void huddle() {
-		const GameInfo& game_info = Observation()->GetGameInfo();
-		Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
-		//temporary huddle at middle of map
-		
-		float x, y;
-		if (game_info.enemy_start_locations[enemypos].x < 100) {
-			//rightside
-			x = game_info.enemy_start_locations[enemypos].x + 40;
-		}
-		else {
-			x = game_info.enemy_start_locations[enemypos].x - 40;
-		}
-
-		if (game_info.enemy_start_locations[enemypos].y < 100) {
-			//rightside
-			y = game_info.enemy_start_locations[enemypos].y + 40;
-		}
-		else {
-			y = game_info.enemy_start_locations[enemypos].y - 40;
-		}
-		for (size_t i = 0; i < 10; ++i) {
-			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, Point2D(x, y),true);
-		}
-	}
 	void rush( ) {
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
