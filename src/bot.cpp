@@ -252,7 +252,7 @@ private:
 		if (enemynear) {
 			for (const auto& unit : units) {
 				if (Distance2D(base->pos, unit->pos) < 30) {
-					Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, unit);
+					//Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, unit);
 					break;
 				}
 			}
