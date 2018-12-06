@@ -125,6 +125,8 @@ public:
 			++stage;
 		
 		case 7:
+			Units enemies = Observation()->GetUnits(Unit::Alliance::Enemy);
+			enemylist = priority(enemies);
 			Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
 
 			if (marines.size() > optimalmar) {
@@ -150,6 +152,7 @@ public:
 			break;
 		}
 		case UNIT_TYPEID::TERRAN_SCV: {
+			
 			const Unit* mineral_target = FindNearestMineralPatch(unit->pos);
 			if (!mineral_target) {
 				break;
@@ -177,6 +180,40 @@ public:
 		}
 	}
 private:
+	std::vector<const Unit*>  priority(Units enemies) {
+		std::vector<const Unit*> eunits;
+		std::vector<const Unit*> priority;
+		std::vector<const Unit*> nonprior;
+		//unit ids for damaging and non damaging builds
+
+		int damaging[] = { 24,130, 66};
+		int non[] = { 22,29,26,30,21,27,28,62,67,70,63,72,65,68,69,64 };
+	
+		
+		for (const auto& unit : enemies) {
+			
+			int unitt = unit->unit_type;
+			int *foundb = std::find(std::begin(non), std::end(non), unitt);
+			int *founda =  std::find(std::begin(damaging), std::end(damaging), unitt);
+			if (founda != std::end(damaging)) {
+				//unit is a damaging building
+				priority.push_back(unit);
+			}
+			else if(foundb != std::end(non)){
+				//unit is a building that doesnrt damage
+				nonprior.push_back(unit);
+			}
+			else {
+				eunits.push_back(unit);
+			}
+		}
+		//a.insert(std::end(a), std::begin(b), std::end(b));
+
+		eunits.insert(std::end(eunits), std::begin(priority), std::end(priority));
+		eunits.insert(std::end(eunits), std::begin(nonprior), std::end(nonprior));
+
+		return eunits;
+	}
 	void rush( ) {
 		const GameInfo& game_info = Observation()->GetGameInfo();
 		Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
@@ -190,7 +227,13 @@ private:
 			// Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, marines.front()->pos);
 			// Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos],true);
 		// }else{ Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); }
-		Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+		if (enemylist.size() == 0) {
+			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+		}
+		else {
+			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, enemylist.front()->pos);
+		}
+		
 		rushed = true;
 
 	}
@@ -267,6 +310,7 @@ private:
 		Units SCVs = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SCV));
 		if (scouter == NULL) {
 			scouter = SCVs.front();
+			
 		}
 	}
 
@@ -331,7 +375,7 @@ private:
         }else {
 			Actions()->UnitCommand(unit_to_build,
 				ability_type_for_structure,
-				Point2D(base->pos.x + rx * 15.0f, base->pos.y + ry * 15.0f));
+				Point2D(unit_to_build->pos.x + rx * 15.0f, unit_to_build->pos.y + ry * 15.0f));
 		}
 
 		return true;
@@ -656,7 +700,7 @@ private:
 	bool enemynear=false;
 	const Unit* supplyDepotOne= NULL;
 	bool buildDepot = false;
-
+	std::vector<const Unit*> enemylist;
 	int optimalmar = 14;
 
 	bool rushed = false;
@@ -671,7 +715,7 @@ int main(int argc, char* argv[]) {
 	Coordinator coordinator;
 	coordinator.LoadSettings(argc, argv);
 
-	coordinator.SetStepSize(1);
+	coordinator.SetStepSize(10);
 
 
 
