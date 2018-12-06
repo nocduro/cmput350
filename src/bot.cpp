@@ -40,6 +40,7 @@ public:
 			
 			if (CountUnitType(UNIT_TYPEID::TERRAN_BARRACKS) == 1) {
 				std::cout << "first RAX" << std::endl;
+				firstrax = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS)).front();
 				++rax;
 				++stage;
 			}
@@ -48,8 +49,6 @@ public:
 
 			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) == 0 || makeSCV) {
 				makeMarine = true;
-
-
 				makeSCV = false;
 			}
 
@@ -136,7 +135,6 @@ public:
 			break;
 
 		}
-
 		//supplies now has our current supplies
 
 	}
@@ -159,7 +157,7 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_BARRACKS: {
 			Units rax = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
-			Actions()->UnitCommand(unit, ABILITY_ID::RALLY_BUILDING, rax.front());
+			Actions()->UnitCommand(unit, ABILITY_ID::RALLY_BUILDING, firstrax->pos);
 			if (makeMarine) {
 				Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
 				
@@ -185,9 +183,10 @@ private:
 		//lower a depo to form a path
 		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
 
+	
 		float dist = Distance2D(marines.front()->pos, game_info.enemy_start_locations[enemypos]);
 		if ( dist < 45) {
-			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, marines.front()->pos);
+			Actions()->UnitCommand(marines, ABILITY_ID::MOVE, marines.front());
 			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos],true);
 		}else{ Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); }
 
@@ -641,7 +640,7 @@ private:
 			Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
 		}
 	}
-
+	const Unit* firstrax = NULL;
 	const Unit* scouter = NULL;
 	const Unit* base = NULL;
 	int enemypos = -1;
@@ -678,7 +677,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss, MediumHard)
+		CreateComputer(Race::Terran, MediumHard)
 	});
 
 	coordinator.SetWindowSize(2000,1500);
