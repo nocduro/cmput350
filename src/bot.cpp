@@ -1,6 +1,7 @@
 #include <sc2api/sc2_api.h>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 using namespace sc2;
 
@@ -123,17 +124,87 @@ public:
 		case 6: //start amassing our marine army and move to next stage
 			makeMarine = true;
 			++stage;
+			break;
 		
 		case 7:
-			Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
-
+			// make first attack squad
+			marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
 			if (marines.size() > optimalmar) {
-				rush();
-				optimalmar = 24;
-			} else if (marines.size() < 7 && rushed == true) {
-				retreat(marines);
+				++stage;
 			}
 			break;
+			
+		case 8:
+			// if (marines.size() > optimalmar) {
+
+			for(const auto& mar:marines){
+				if(!mar->is_alive){
+					marines.erase(std::remove(marines.begin(), marines.end(), mar), marines.end());
+					std::cout << "ERASED"<< std::endl;
+				}
+			}
+				
+			if (rushed == false) {
+				std::cout << "SIZE: " << marines.size() << std::endl;
+				rush(marines);
+				optimalmar = 24;
+			} else if (marines.size() == 0) {
+				++stage;
+				rushed = false;
+				std::cout << "Everyone Dead" << std::endl;
+			} else if (marines.size() < 7 && rushed == true) {
+				std::cout << "SIZE: " << marines.size() << std::endl;
+				retreat(marines);
+		
+			}
+			break;
+
+		case 9:
+			// second wave
+
+			butts = Observation()->GetUnits(Unit::Alliance::Self);
+		
+			for (const auto& unit : butts) {
+				if (unit->unit_type == UNIT_TYPEID::TERRAN_MARINE) {
+					marines2.push_back(unit);
+					// std::cout << "UNIT FOUND" << std::endl;
+				}
+			}
+			
+			// marines2 = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+			std::cout << "stage 9" <<std::endl;
+			std::cout << "SIZE: " << marines.size() << std::endl;
+			if (marines2.size() > optimalmar) {
+				std::cout << "IN" <<std::endl;
+				++stage;
+			}
+			break;
+
+		case 10:
+			// send second wave of 24
+			for(const auto& mar:marines2){
+				if(!mar->is_alive){
+					marines2.erase(std::remove(marines2.begin(), marines2.end(), mar), marines2.end());
+					std::cout << "ERASED"<< std::endl;
+				}
+			}
+				
+			if (rushed == false) {
+				std::cout << "SIZE: " << marines2.size() << std::endl;
+				rush(marines2);
+				// optimalmar = 24;
+			} else if (marines2.size() == 0) {
+				++stage;
+				rushed = false;
+				std::cout << "Everyone Dead in Squad 2" << std::endl;
+			} else if (marines2.size() < 7 && rushed == true) {
+				std::cout << "SIZE: " << marines2.size() << std::endl;
+				retreat(marines2);
+		
+			}
+			break;
+
+		// case 11:
 
 		}
 
@@ -177,9 +248,9 @@ public:
 		}
 	}
 private:
-	void rush( ) {
+	void rush(Units marines) {
 		const GameInfo& game_info = Observation()->GetGameInfo();
-		Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+		// Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
 		//more than 14 marines, lets attack.
 		
 		//lower a depo to form a path
@@ -209,7 +280,7 @@ private:
 		if (enemynear) {
 			for (const auto& unit : units) {
 				if (Distance2D(base->pos, unit->pos) < 30) {
-					Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, unit);
+					// Actions()->UnitCommand(marines.front(), ABILITY_ID::ATTACK_ATTACK, unit);
 					break;
 				}
 			}
@@ -230,16 +301,16 @@ private:
 			// here I would call attack function which would determine most dangerous target
 			// and attack for me
 			// once cooldown is done, we want to attack
-			// for (const auto& marine : marines) {
-			// 	if (marine->weapon_cooldown == 0) {
-			// 		std::cout << "Weapon regenerated! Attacc!" << std::endl;
-			// 		Actions()->UnitCommand(marine, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
-			// 	}
-			// }
-
-		if (marines.front()->weapon_cooldown == 0) {
-			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+		for (const auto& marine : marines) {
+			if (marine->weapon_cooldown == 0) {
+				std::cout << "Weapon regenerated! Attacc!" << std::endl;
+				Actions()->UnitCommand(marine, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+			}
 		}
+
+		// if (marines.front()->weapon_cooldown == 0) {
+		// 	Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+		// }
 		
 		// once the units get too close, retreat again
 		if (DistanceSquared2D(enemies.front()->pos, marines.front()->pos) <= 16) {
@@ -661,6 +732,11 @@ private:
 
 	bool rushed = false;
 
+	Units marines;
+	Units marines2;
+
+	Units butts;
+
 	// const Unit* supplyDepotOne;
 	// bool scouting_done = false;
 	// const Unit* supplyDepotTwo;
@@ -678,7 +754,7 @@ int main(int argc, char* argv[]) {
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss, Hard)
+		CreateComputer(Race::Terran, Medium)
 	});
 
 	coordinator.SetWindowSize(2000,1500);
