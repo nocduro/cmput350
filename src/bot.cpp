@@ -127,11 +127,12 @@ public:
 			Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
 			if (marines.size() > 14) {
 				rush(marines);
-			} else if (marines.size() < 7) {
+			} else if (marines.size() < 7 && rushed == true) {
 				retreat(marines);
 			}
 			break;
 		}
+
 		//supplies now has our current supplies
 
 	}
@@ -182,6 +183,7 @@ private:
 		//lower a depo to form a path
 		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
 		Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+		rushed = true;
 	}
 	void checkVision() {
 		enemynear = false;
@@ -208,7 +210,33 @@ private:
 	}
 
 	void retreat(Units marines) {
+		Units enemies = Observation()->GetUnits(Unit::Alliance::Enemy); //get enemy units
+		const GameInfo& game_info = Observation()->GetGameInfo();
+
+		// Start retreating
 		Actions()->UnitCommand(marines, ABILITY_ID::SMART, base->pos);
+
+		
+
+			// here I would call attack function which would determine most dangerous target
+			// and attack for me
+			// once cooldown is done, we want to attack
+			// for (const auto& marine : marines) {
+			// 	if (marine->weapon_cooldown == 0) {
+			// 		std::cout << "Weapon regenerated! Attacc!" << std::endl;
+			// 		Actions()->UnitCommand(marine, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+			// 	}
+			// }
+
+		if (marines.front()->weapon_cooldown == 0) {
+			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+		}
+		
+		// once the units get too close, retreat again
+		if (DistanceSquared2D(enemies.front()->pos, marines.front()->pos) <= 16) {
+			std::cout << "Too close! Retreat!" << std::endl;
+			return;
+		}
 
 	}
 
@@ -477,7 +505,7 @@ private:
 				buildPoint);
 
 		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
-		std::cout << "lower depot 1" << std::endl;
+		// std::cout << "lower depot 1" << std::endl;
 	}
 
     void BuildBarracksAfter(const Unit* unit_to_build,size_t Barrack ) {
@@ -619,6 +647,7 @@ private:
 	bool enemynear=false;
 	const Unit* supplyDepotOne= NULL;
 	bool buildDepot = false;
+	bool rushed = false;
 	// const Unit* supplyDepotOne;
 	// bool scouting_done = false;
 	// const Unit* supplyDepotTwo;
@@ -628,7 +657,8 @@ private:
 int main(int argc, char* argv[]) {
 	Coordinator coordinator;
 	coordinator.LoadSettings(argc, argv);
-	coordinator.SetStepSize(1);
+	// coordinator.SetStepSize(1);/
+	coordinator.SetRealtime(true);
 	// coordinator.se
 
 	Bot bot;
