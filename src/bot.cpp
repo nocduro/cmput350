@@ -185,12 +185,12 @@ private:
 		//lower a depo to form a path
 		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
 
-		float dist = Distance2D(marines.front()->pos, game_info.enemy_start_locations[enemypos]);
-		if ( dist < 45) {
-			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, marines.front()->pos);
-			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos],true);
-		}else{ Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); }
-
+		// float dist = Distance2D(marines.front()->pos, game_info.enemy_start_locations[enemypos]);
+		// if ( dist < 45) {
+			// Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, marines.front()->pos);
+			// Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos],true);
+		// }else{ Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); }
+		Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
 		rushed = true;
 
 	}
@@ -671,14 +671,14 @@ int main(int argc, char* argv[]) {
 	Coordinator coordinator;
 	coordinator.LoadSettings(argc, argv);
 
-	coordinator.SetStepSize(10);
+	coordinator.SetStepSize(1);
 
 
 
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss, MediumHard)
+		CreateComputer(Race::Protoss, Hard)
 	});
 
 	coordinator.SetWindowSize(2000,1500);
