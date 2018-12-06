@@ -194,7 +194,7 @@ public:
 				rush(marines2);
 				// optimalmar = 24;
 			} else if (marines2.size() == 0) {
-				++stage;
+				// ++stage;
 				rushed = false;
 				std::cout << "Everyone Dead in Squad 2" << std::endl;
 			} else if (marines2.size() < 7 && rushed == true) {
@@ -204,7 +204,7 @@ public:
 			}
 			break;
 
-		// case 11:
+		case 11:
 
 		}
 
