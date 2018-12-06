@@ -124,13 +124,25 @@ public:
 			makeMarine = true;
 			++stage;
 		case 7:
-			Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
-			if (marines.size() > 14) {
-				rush(marines);
-			} else if (marines.size() < 7 && rushed == true) {
-				retreat(marines);
+			
+			if (CountUnitType(UNIT_TYPEID::TERRAN_MARINE) > 10) {
+				
+				++stage;
 			}
 			break;
+		
+		case 8:
+			Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+
+			if (marines.size() > optimalmar) {
+				rush();
+				//optimalmar = 22;
+			} else if (marines.size() < 7 && rushed == true) {
+				retreat(marines);
+				--stage;
+			}
+			break;
+
 		}
 
 		//supplies now has our current supplies
@@ -164,6 +176,7 @@ public:
 		}
 		case UNIT_TYPEID::TERRAN_MARINE: {
 			const GameInfo& game_info = Observation()->GetGameInfo();
+		
 			break;
 		}
 		default: {
@@ -172,18 +185,22 @@ public:
 		}
 	}
 private:
-	void rush(Units marines) {
+	void rush( ) {
 		const GameInfo& game_info = Observation()->GetGameInfo();
-		// Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
-		// if (marines.size() < 14) {
-		// 	return;
-		// }
+		Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
 		//more than 14 marines, lets attack.
-
+		
 		//lower a depo to form a path
 		Actions()->UnitCommand(supplyDepotOne, ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
-		Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]);
+
+		float dist = Distance2D(marines.front()->pos, game_info.enemy_start_locations[enemypos]);
+		if ( dist < 45) {
+			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, marines.front()->pos);
+			Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos],true);
+		}else{ Actions()->UnitCommand(marines, ABILITY_ID::ATTACK_ATTACK, game_info.enemy_start_locations[enemypos]); }
+
 		rushed = true;
+
 	}
 	void checkVision() {
 		enemynear = false;
@@ -647,7 +664,11 @@ private:
 	bool enemynear=false;
 	const Unit* supplyDepotOne= NULL;
 	bool buildDepot = false;
+
+	int optimalmar = 14;
+
 	bool rushed = false;
+
 	// const Unit* supplyDepotOne;
 	// bool scouting_done = false;
 	// const Unit* supplyDepotTwo;
@@ -657,14 +678,15 @@ private:
 int main(int argc, char* argv[]) {
 	Coordinator coordinator;
 	coordinator.LoadSettings(argc, argv);
-	// coordinator.SetStepSize(1);/
-	coordinator.SetRealtime(true);
-	// coordinator.se
+
+	coordinator.SetStepSize(10);
+
+
 
 	Bot bot;
 	coordinator.SetParticipants({
 		CreateParticipant(Race::Terran, &bot),
-		CreateComputer(Race::Protoss, MediumHard)
+		CreateComputer(Race::Protoss, Medium)
 	});
 
 	coordinator.SetWindowSize(2000,1500);
